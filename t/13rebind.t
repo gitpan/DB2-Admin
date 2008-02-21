@@ -1,11 +1,11 @@
 #
 # Test the rebind function
 #
-# $Id: 13rebind.t,v 48.1 2005/03/23 20:20:00 biersma Exp $
+# $Id: 13rebind.t,v 150.1 2007/12/12 19:29:01 biersma Exp $
 #
 
 use strict;
-use Test::More tests => 5;
+use Test::More tests => 11;
 BEGIN { use_ok('DB2::Admin'); }
 
 #
@@ -24,10 +24,23 @@ my $retval = DB2::Admin->Connect('Database' => $db_name);
 ok($retval, "Connect - $db_name");
 
 $retval = DB2::Admin->Rebind('Database' => $db_name,
-			 'Schema'   => $schema,
-			 'Package'  => $package,
-			);
-ok($retval, "Rebind - $schema.$package");
+			     'Schema'   => $schema,
+			     'Package'  => $package,
+			    );
+ok($retval, "Rebind - $schema.$package - no options");
+
+foreach my $resolve (qw(Any Conservative)) {
+    foreach my $reopt (qw(None Once Always)) {
+	$retval = DB2::Admin->Rebind('Database' => $db_name,
+				     'Schema'   => $schema,
+				     'Package'  => $package,
+				     'Options'  => { Resolve => $resolve,
+						     ReOpt   => $reopt,
+						   },
+				    );
+	ok($retval, "Rebind - $schema.$package - resolve $resolve, reopt $reopt");
+    }
+}
 
 $retval = DB2::Admin->Disconnect('Database' => $db_name);
 ok($retval, "Disconnect - $db_name");

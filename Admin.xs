@@ -1,7 +1,7 @@
 /*
  * DB2/Admin.xs - perl XS code to support DB2 Administrative API functions
  *
- * Copyright (c) 2007, Morgan Stanley & Co. Incorporated
+ * Copyright (c) 2007-2008, Morgan Stanley & Co. Incorporated
  * See ..../COPYING for terms of distribution.
  *
  * This library is free software; you can redistribute it and/or
@@ -39,7 +39,7 @@
  * EFFECTIVELY USING THIS OR ANOTHER EQUIVALENT DISCLAIMER AS WELL AS
  * ANY OTHER LICENSE TERMS THAT MAY APPLY.
  *
- * $Id: Admin.xs,v 145.3 2007/11/05 19:14:10 biersma Exp $
+ * $Id: Admin.xs,v 150.3 2008/02/21 21:47:09 biersma Exp $
  */
 
 /* Perl XS includes */
@@ -3299,6 +3299,8 @@ db2Load(db_alias, load_action_string, input_columns, source_type, media_type, so
 		 STRLEN  len;
 
 		 val = SvPV(source_list, len);
+		 Newz(0, newz_ptr, sizeof(struct sqlu_media_list), char);
+		 source_media_info = newz_ptr;
 		 source_media_info->media_type = SQLU_SQL_STMT;
 		 source_media_info->sessions = 1;
 		 source_media_info->target.pStatement = &source_statement_info;
@@ -4148,6 +4150,7 @@ sqlarbnd(dbname, package, options)
 	 * Iterate over the options hash and extract keys matching:
 	 * - Version => Integer
 	 * - Resolve => Any / Conservative
+	 * - ReOpt => None / Once / Always
 	 */
 	num_opts = HvKEYS((HV*)SvRV(options));
 	if (num_opts) {
@@ -4156,48 +4159,72 @@ sqlarbnd(dbname, package, options)
 	    I32	  keylen;
 	    SV	 *value;
 	    int   offset = 0;
-
+	    
 	    Newz(0, newz_ptr,
 		 sizeof(struct sqlopt) + num_opts * sizeof(struct sqloptions),
 		 char);
 	    rebind_options = newz_ptr;
 	    rebind_options->header.allocated = num_opts;
 	    rebind_options->header.used = num_opts;
-
+	    
 	    (void)hv_iterinit((HV*)SvRV(options));
 	    while ((value = hv_iternextsv((HV*)SvRV(options),
 					  (char **)&key, &keylen))) {
-		 if (strEQ(key, "Version")) { /* Number */
-		     if ((!SvROK(value)) && looks_like_number(value)) {
-			 rebind_options->option[offset].type = SQL_VERSION_OPT;
-			 rebind_options->option[offset].val = SvIV(value);
-			 offset++;
-		     } else {
-			 croak("Illegal value for Options key '%s': not a number\n", key);
-		     }
-		 } else if (strEQ(key, "Resolve")) {
-		     if (SvPOK(value)) {
-			 char   *val;
-			 STRLEN  len;
-			 int     opt_val = SQL_RESOLVE_ANY;
-		
-			 val = SvPV(value, len);
-			 if (strEQ(val, "Any")) {
-			     opt_val = SQL_RESOLVE_ANY;
-			 } else if (strEQ(val, "Conservative")) {
-			     opt_val = SQL_RESOLVE_CONSERVATIVE;
-			 } else {
-			     croak("Illegal value '%s' for Options key '%s': expected 'Any' or 'Conservative'", val, key);
-			 }
-			 rebind_options->option[offset].type = SQL_RESOLVE_OPT;
-			 rebind_options->option[offset].val = opt_val;
-			 offset++;
-		     } else {
-			 croak("Illegal value for Options key '%s': not a string\n", key);
-		     }
-		 } else {
-		     croak("Unexpected Options key '%s'", key);
-		 }
+		if (strEQ(key, "Version")) { /* Number */
+		    if ((!SvROK(value)) && looks_like_number(value)) {
+			rebind_options->option[offset].type = SQL_VERSION_OPT;
+			rebind_options->option[offset].val = SvIV(value);
+			offset++;
+		    } else {
+			croak("Illegal value for Options key '%s': not a number\n", key);
+		    }
+		} else if (strEQ(key, "Resolve")) {
+		    if (SvPOK(value)) {
+			char   *val;
+			STRLEN  len;
+			int     opt_val = SQL_RESOLVE_ANY;
+			
+			val = SvPV(value, len);
+			if (strEQ(val, "Any")) {
+			    opt_val = SQL_RESOLVE_ANY;
+			} else if (strEQ(val, "Conservative")) {
+			    opt_val = SQL_RESOLVE_CONSERVATIVE;
+			} else {
+			    croak("Illegal value '%s' for Options key '%s': expected 'Any' or 'Conservative'", val, key);
+			}
+			rebind_options->option[offset].type = SQL_RESOLVE_OPT;
+			rebind_options->option[offset].val = opt_val;
+			offset++;
+		    } else {
+			croak("Illegal value for Options key '%s': not a string\n", key);
+		    }
+#ifdef SQL_REOPT_OPT
+		} else if (strEQ(key, "ReOpt") || strEQ(key, "Reopt")) {
+		    if (SvPOK(value)) {
+			char   *val;
+			STRLEN  len;
+			int     opt_val = SQL_RESOLVE_ANY;
+			
+			val = SvPV(value, len);
+			if (strEQ(val, "None")) {
+			    opt_val = SQL_REOPT_NONE;
+			} else if (strEQ(val, "Once")) {
+			    opt_val = SQL_REOPT_ONCE;
+			} else if (strEQ(val, "Always")) {
+			    opt_val = SQL_REOPT_ALWAYS;
+			} else {
+			    croak("Illegal value '%s' for Options key '%s': expected 'None', 'Once' or 'Always'", val, key);
+			}
+			rebind_options->option[offset].type = SQL_REOPT_OPT;
+			rebind_options->option[offset].val = opt_val;
+			offset++;
+		    } else {
+			croak("Illegal value for Options key '%s': not a string\n", key);
+		    }
+#endif /* SQL_REOPT_OPT */
+		} else {
+		    croak("Unexpected Options key '%s'", key);
+		}
 	    } /* End: each hash entry */
 	} /* End if: have options */
 

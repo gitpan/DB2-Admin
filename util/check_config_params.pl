@@ -3,14 +3,14 @@
 # check_config_params - Cross-verify configuration parameters
 #                       and known DB2 constants.
 #
-# $Id: check_config_params.pl,v 145.2 2007/11/20 21:52:37 biersma Exp $
+# $Id: check_config_params.pl,v 150.1 2007/12/12 19:23:49 biersma Exp $
 #
 
 use strict;
 use MSDW::Version ('Params-Validate' => '0.62');
-use DB2API::Constants;
+use DB2::Admin::Constants;
 
-my $config_params = $DB2API::Constants::config_params;
+my $config_params = $DB2::Admin::Constants::config_params;
 print "Will verify [" . (keys %$config_params) . "] config parameters\n";
 
 #
@@ -215,36 +215,36 @@ while (my ($param, $info) = each %$config_params) {
 # Type 'Number' and Category 'ConfigParam'
 #
 foreach my $param (sort keys %$config_params) {
-    my $info = DB2API::Constants::->GetInfo($param);
+    my $info = DB2::Admin::Constants::->GetInfo($param);
     unless (defined $info) {
-	print "Constant '$param' is not known to DB2API::Constants\n";
+	print "Constant '$param' is not known to DB2::Admin::Constants\n";
 	$errors++;
 	next;
     }
     unless ($info->{'Type'} eq 'Number') {
-	print "Constant '$param' is not known as a number to DB2API::Constants\n";
+	print "Constant '$param' is not known as a number to DB2::Admin::Constants\n";
 	$errors++
     }
     unless (defined $info->{'Category'} &&$
 	    info->{'Category'} eq 'ConfigParam') {
-	print "Constant '$param' is not known as a ConfigParam to DB2API::Constants\n";
+	print "Constant '$param' is not known as a ConfigParam to DB2::Admin::Constants\n";
 	$errors++
     }
 }
 
 #
-# All DB2API constants marked as 'ConfigParam' should be known, or
+# All DB2::Admin constants marked as 'ConfigParam' should be known, or
 # known to be obsolete.  IBM-internal constyants should not have a
 # description.
 #
-foreach my $constant (sort keys %$DB2API::Constants::constant_info) {
-    my $info = $DB2API::Constants::constant_info->{$constant};
+foreach my $constant (sort keys %$DB2::Admin::Constants::constant_info) {
+    my $info = $DB2::Admin::Constants::constant_info->{$constant};
     next unless (defined $info->{'Category'} &&
 		 $info->{'Category'} eq 'ConfigParam');
 
     if (grep { $_ eq $constant } @ibm_internal) {
 	if (defined $config_params->{$constant}) {
-	    print "DB2API::Constants '$constant' is IBM-internal and should not be in the configuration parameter table\n";
+	    print "DB2::Admin::Constants '$constant' is IBM-internal and should not be in the configuration parameter table\n";
 	    $errors++;
 	}
 	next;
@@ -252,7 +252,7 @@ foreach my $constant (sort keys %$DB2API::Constants::constant_info) {
     next if (defined $config_params->{$constant});
     next if (grep { $_ eq $constant } @obsolete_v71, @obsolete_v81, @obsolete_v82, @obsolete_v95);
     #next if ($constant =~ m!^SQLF_KTN_!);
-    print "DB2API::Constants '$constant' is not known and not listed as obsolete\n";
+    print "DB2::Admin::Constants '$constant' is not known and not listed as obsolete\n";
     $warnings++;
 }
 

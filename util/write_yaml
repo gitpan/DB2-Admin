@@ -5,7 +5,7 @@
 #              build the tarball but out own mechanim to deal
 #              with the Morgan Stanley source environment.
 #
-# $Id: write_yaml,v 145.3 2007/11/15 13:02:55 biersma Exp $
+# $Id: write_yaml,v 150.1 2007/12/10 20:48:55 biersma Exp $
 #
 
 use strict;
@@ -14,7 +14,7 @@ use Getopt::Long;
 our %args;
 GetOptions(\%args, qw(release=s)) || die "Invalid argument";
 
-open (META, '>', 'meta.yaml') ||
+open (META, '>', 'META.yml') ||
   die "Cannot create output file: $!";
 print META <<_END_META_;
 meta-spec:

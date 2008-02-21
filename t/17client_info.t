@@ -1,7 +1,7 @@
 #
 # Test the get/set client information functions
 #
-# $Id: 17client_info.t,v 115.1 2006/05/01 17:26:30 biersma Exp $
+# $Id: 17client_info.t,v 150.1 2007/12/12 19:30:07 biersma Exp $
 #
 
 use strict;

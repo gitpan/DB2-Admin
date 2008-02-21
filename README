@@ -52,10 +52,10 @@ release combinations to the maintainer.
 
   Operating System        DB2 Version        Perl Version
   ================        ===========        ============
-  Solaris 7               7.2                5.8
-  Solaris 8               8.2                5.8
-  Solaris 10              9.1                5.8
-  Solaris 10              9.5                5.8
+  Solaris 7 (SPARC)       7.2                5.8
+  Solaris 8 (SPARC)       8.2                5.8
+  Solaris 10 (SPARC)      9.1                5.8
+  Solaris 10 (SPARC)      9.5                5.8
   Red Hat EL 3 (x86)      8.1                5.8
   Red Hat EL 3 (x86)      8.2                5.8
   Red Hat EL 3 (x86)      9.1                5.8
@@ -73,6 +73,9 @@ module if you've downloaded a pre-compiled version of perl.
 
 You need to run the test portions under a userid with DB2
 system administration privileges.
+
+Make sure the pre-requisite module Params::Validate has been
+installed.
 
 As a first step, set the environment variable DB2_VERSION to the DB2
 release you have installed.  For example, if you're running DB2 Viper
@@ -126,9 +129,9 @@ The code is currently maintained and supported by:
 =cut
 
 #
-# $Id: README,v 145.2 2007/12/10 19:12:14 biersma Exp $
+# $Id: README,v 150.1 2008/02/21 21:31:58 biersma Exp $
 # 
-# Copyright (c) 2007, Morgan Stanley & Co. Incorporated
+# Copyright (c) 2007-2008, Morgan Stanley & Co. Incorporated
 # See ..../COPYING for terms of distribution.
 #
 # This library is free software; you can redistribute it and/or

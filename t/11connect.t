@@ -1,7 +1,7 @@
 #
 # Test the connect / disconnect functions
 #
-# $Id: 11connect.t,v 140.1 2007/06/13 13:02:12 biersma Exp $
+# $Id: 11connect.t,v 150.1 2007/12/12 19:30:17 biersma Exp $
 #
 
 use strict;

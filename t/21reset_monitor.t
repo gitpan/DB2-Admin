@@ -1,7 +1,7 @@
 #
 # Test the reset monitor function
 #
-# $Id: 21reset_monitor.t,v 17.1 2004/08/30 15:53:08 biersma Exp $
+# $Id: 21reset_monitor.t,v 150.1 2007/12/12 19:29:37 biersma Exp $
 #
 
 use strict;

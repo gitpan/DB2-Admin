@@ -1,3 +1,20 @@
+=head1 Changes in the 2.8 release
+
+=head2 Fix core dump in load from cursor
+
+A bug in the db2Load command, introduced in the 2.7 release, caused a
+load from cursor (source type "Statement") to dump core. Now fixed.
+
+=head2 BugFix in Load / Import
+
+A bug in the Load and Import methods prevented load/import operations
+against mixed-case schema and table names (which have to be
+double-quoted when passed to DB2).  Now fixed.
+
+=head2 Add the 'ReOpt' option to the Rebind method
+
+The re-optimization level can now be set at Rebind time.
+
 =head1 Changes in the 2.7 release
 
 =head2 Rename module to DB2::Admin

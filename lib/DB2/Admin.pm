@@ -1,7 +1,7 @@
 #
 # DB2::Admin - Access to DB2 administrative API
 #
-# Copyright (c) 2007, Morgan Stanley & Co. Incorporated
+# Copyright (c) 2007-2008, Morgan Stanley & Co. Incorporated
 # See ..../COPYING for terms of distribution.
 #
 # This library is free software; you can redistribute it and/or
@@ -39,7 +39,7 @@
 # THIS OR ANOTHER EQUIVALENT DISCLAIMER AS WELL AS ANY OTHER LICENSE
 # TERMS THAT MAY APPLY.
 #
-# $Id: Admin.pm,v 145.2 2007/11/05 18:52:36 biersma Exp $
+# $Id: Admin.pm,v 150.3 2008/02/21 21:29:06 biersma Exp $
 #
 
 package DB2::Admin;
@@ -54,7 +54,7 @@ use DB2::Admin::Constants;
 use DB2::Admin::DataStream;
 
 use vars qw($VERSION);
-$VERSION = '2.7';
+$VERSION = '2.8';
 bootstrap DB2::Admin $VERSION;
 
 #
@@ -1055,7 +1055,7 @@ sub Import {
     #
     # Construct an action string
     #
-    my $action = "\U$params{Operation}\L INTO $params{Schema}.$params{Table}";
+    my $action = "\U$params{Operation}\E INTO $params{Schema}.$params{Table}";
     if (defined $params{TargetColumns}) {
 	confess "Parameter 'TargetColumns' must be an array-reference"
 	  unless (ref $params{TargetColumns} eq 'ARRAY');
@@ -1232,7 +1232,7 @@ sub Load {
     #
     # Construct an action string
     #
-    my $action = "\U$params{Operation}\L INTO $params{Schema}.$params{Table}";
+    my $action = "\U$params{Operation}\E INTO $params{Schema}.$params{Table}";
     if (defined $params{TargetColumns}) {
 	confess "Parameter 'TargetColumns' must be an array-reference"
 	  unless (ref $params{TargetColumns} eq 'ARRAY');
@@ -1954,8 +1954,8 @@ DB2::Admin - Support for DB2 Administrative API from perl
 
   # Monitor switches and snapshot
   DB2::Admin::->SetMonitorSwitches('Switches' => { 'Table' => 1,
-                                               'UOW'   => 0,
-                                             });
+                                                   'UOW'   => 0,
+                                                 });
   my $retval = DB2::Admin::->GetSnapshot('Subject' => 'SQLMA_APPLINFO_ALL');
   DB2::Admin::->ResetMonitorSwitches();
 
@@ -1965,40 +1965,40 @@ DB2::Admin - Support for DB2 Administrative API from perl
   print "Max agents: $options[0]{Value}\n";
   print "Max coord agents: $options[1]{Value}\n";
   DB2::Admin::->UpdateDbmConfig('Param' => [ { 'Name'  => 'jdk11_path',
-                                           'Value' => '/opt/ibm/db2/...',
-                                         },
-                                         { 'Name'  => 'intra_parallel',
-                                           'Value' => 1,
-                                         },
-                                       ],
-                             'Flag'  => 'Delayed');
+                                               'Value' => '/opt/ibm/db2/...',
+                                             },
+                                             { 'Name'  => 'intra_parallel',
+                                               'Value' => 1,
+                                             },
+                                           ],
+                                 'Flag'  => 'Delayed');
 
   # Database configuration parameters
   @options = DB2::Admin::->GetDatabaseConfig('Param'    => [ qw(dbheap logpath) ],
-                                         'Flag'     => 'Delayed',
-                                         'Database' => 'sample',
-                                        );
+                                             'Flag'     => 'Delayed',
+                                             'Database' => 'sample',
+                                            );
   print "Database heap size: $options[0]{Value}\n";
   print "Path to log files: $options[1]{Value}\n";
   DB2::Admin::->UpdateDatabaseConfig('Param'    => { 'Name'  => 'autorestart',
-                                                 'Value' => 0,
-                                               },
-                                 'Database' => 'sample',
-                                 'Flag'     => 'Delayed');
+                                                     'Value' => 0,
+                                                   },
+                                     'Database' => 'sample',
+                                     'Flag'     => 'Delayed');
 
   DB2::Admin::->Detach();
 
   # Database, node and DCS directories - no attach required
   my @db_dir = DB2::Admin::->GetDatabaseDirectory();
   my @db_dir = DB2::Admin::->GetDatabaseDirectory('Path' => $dbdir_path);
-  my @node_dir =  DB2::Admin::->GetNodeDirectory();
-  my @dcs_dir =  DB2::Admin::->GetDCSDirectory();
+  my @node_dir = DB2::Admin::->GetNodeDirectory();
+  my @dcs_dir = DB2::Admin::->GetDCSDirectory();
 
   # Catalog or uncatalog a database
   DB2::Admin::->CatalogDatabase('Database' => 'PRICES',
-                            'Alias'    => 'TESTPRI',
-                            'NodeName' => 'TESTNODE',
-                            'Type'     => 'Remote');
+                                'Alias'    => 'TESTPRI',
+                                'NodeName' => 'TESTNODE',
+                                'Type'     => 'Remote');
   DB2::Admin::->UncatalogDatabase('Alias' => 'TESTPRI');
 
   # Catalog or uncatalog a node
@@ -2010,7 +2010,7 @@ DB2::Admin - Support for DB2 Administrative API from perl
 
   # Catalog or uncatalog a DCS database
   DB2::Admin::->CatalogDCSDatabase('Database' => 'PRICES',
-                               'Target'   => 'DCSDB');
+                                   'Target'   => 'DCSDB');
   DB2::Admin::->UncatalogDCSDatabase('Databases' => 'PRICES');
 
   # Force applications - attach required. Use with care.
@@ -2019,14 +2019,14 @@ DB2::Admin - Support for DB2 Administrative API from perl
 
   # Connect to database / Disconnect from database
   DB2::Admin::->Connect('Database' => 'mydb',
-                    'Userid'   => 'myuser',
-                    'Password' => 'mypass');
+                        'Userid'   => 'myuser',
+                        'Password' => 'mypass');
   DB2::Admin::->SetConnectAttributes('ConnectTimeout' => 120);
   DB2::Admin::->Connect('Database'    => 'mydb',
-                    'Userid'      => 'myuser',
-                    'Password'    => 'mypass',
-                    'ConnectAttr' => { 'ProgramName' => 'myscript', },
-                   );
+                        'Userid'      => 'myuser',
+                        'Password'    => 'mypass',
+                        'ConnectAttr' => { 'ProgramName' => 'myscript', },
+                       );
   DB2::Admin::->Disconnect('Database' => 'mydb');
 
   # Get/set connection-level client information
@@ -2035,38 +2035,38 @@ DB2::Admin - Support for DB2 Administrative API from perl
 
   # Export data.  Requires a database connection.  Example omits options.
   DB2::Admin->Export('Database'   => $db_name,
-		 'Schema'     => $schema_name,
-		 'Table'      => $table_name,
-		 'OutputFile' => "/var/tmp/data-$schema_name-$table_name.del",
-		 'FileType'   => 'DEL');
+		     'Schema'     => $schema_name,
+		     'Table'      => $table_name,
+		     'OutputFile' => "/var/tmp/data-$schema_name-$table_name.del",
+		     'FileType'   => 'DEL');
 
   # Import data.  Requires a database connection.  Example omits options.
   DB2::Admin->Import('Database'   => $db_name,
-		 'Schema'     => $schema_name,
-		 'Table'      => $table_name,
-		 'InputFile'  => "/var/tmp/data-$schema_name-$table_name.del",
-                 'Operation'  => 'Insert',
-		 'FileType'   => 'DEL');
+		     'Schema'     => $schema_name,
+		     'Table'      => $table_name,
+		     'InputFile'  => "/var/tmp/data-$schema_name-$table_name.del",
+                     'Operation'  => 'Insert',
+		     'FileType'   => 'DEL');
 
   # Load data.  Requires a database connection.  Example omits options.
   # The 'Load' and 'LoadQuery' commands require DB2 V8.2
   my $rc = DB2::Admin->Load('Database'   => $db_name,
-	                'Schema'     => $schema_name,
-	                'Table'      => $table_name,
-	                'InputFile'  => "/var/tmp/data-$schema_name-$table_name.del",
-                        'Operation'  => 'Insert',
-                        'SourceType' => 'DEL');
+	                    'Schema'     => $schema_name,
+   	                    'Table'      => $table_name,
+	                    'InputFile'  => "/var/tmp/data-$schema_name-$table_name.del",
+                            'Operation'  => 'Insert',
+                            'SourceType' => 'DEL');
   my $state = DB2::Admin->LoadQuery('Database' => $db_name,
-				'Schema'   => $schema_name,
-				'Table'    => $table_name,
-				'LogFile'  => $logfile,
-				'Messages' => 'All');
+		                    'Schema'   => $schema_name,
+				    'Table'    => $table_name,
+				    'LogFile'  => $logfile,
+				    'Messages' => 'All');
 
   # Run table statistics.  Requires a database connection.  Example
   # omits options.
   $rc = DB2::Admin->Runstats('Database' => $db_name,
-                         'Schema'   => $schema_name,
-                         'Table'    => $table_name);
+                            'Schema'   => $schema_name,
+                             'Table'    => $table_name);
 
   # List history.  Requires an attachemnet, not a database connection.
   @history = DB2::Admin->
@@ -2082,8 +2082,8 @@ DB2::Admin - Support for DB2 Administrative API from perl
 
   # Rebind a package.  Requires a database connection. Example omits options.
   DB2::Admin->Rebind('Database' => $db_name,
-		 'Schema'   => $schema_name,
-                 'Package'  => $pkg_name);
+		     'Schema'   => $schema_name,
+                     'Package'  => $pkg_name);
 
 =head1 DESCRIPTION
 
@@ -4411,9 +4411,15 @@ The package version number (integer)
 
 The rebind semantics: "Any" or "Conservative"
 
+=item ReOpt
+
+The re-optimization semantics: "None", "Once" or "Always".  This
+option requires DB2 V8.2 or later.
+
 =back
 
-The default is version-less packages and any binding type.
+The default is version-less packages, any binding type and no
+re-optimization.
 
 =back
 

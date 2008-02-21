@@ -1,7 +1,7 @@
 #
 # Test the attach / detach functions
 #
-# $Id: 10attach.t,v 17.1 2004/08/30 15:52:51 biersma Exp $
+# $Id: 10attach.t,v 150.1 2007/12/12 19:30:25 biersma Exp $
 #
 
 use strict;

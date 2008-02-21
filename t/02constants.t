@@ -1,7 +1,7 @@
 #
 # Test of the DB2::Admin::Constants module
 #
-# $Id: 02constants.t,v 17.1 2004/08/30 15:52:43 biersma Exp $
+# $Id: 02constants.t,v 150.1 2007/12/12 19:30:34 biersma Exp $
 #
 
 use strict;

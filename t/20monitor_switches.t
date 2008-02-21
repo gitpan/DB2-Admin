@@ -1,7 +1,7 @@
 #
 # Test the get/set monitor switches functions
 #
-# $Id: 20monitor_switches.t,v 17.1 2004/08/30 15:53:02 biersma Exp $
+# $Id: 20monitor_switches.t,v 150.1 2007/12/12 19:29:50 biersma Exp $
 #
 
 use strict;
@@ -18,7 +18,7 @@ $retval = DB2::Admin->GetMonitorSwitches();
 ok($retval, "GetMonitorSwitches");
 
 $retval = DB2::Admin->SetMonitorSwitches(Switches => {'Table' => 0,
-						  'Sort'  => 0,
-						 },
-				    );
+						      'Sort'  => 0,
+						     },
+					);
 ok($retval, "SetMonitorSwitches");

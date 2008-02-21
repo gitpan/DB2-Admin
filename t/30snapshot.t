@@ -1,7 +1,7 @@
 #
 # Test the snapshot functions
 #
-# $Id: 30snapshot.t,v 66.1 2005/04/18 19:54:56 biersma Exp $
+# $Id: 30snapshot.t,v 150.1 2007/12/12 19:29:29 biersma Exp $
 #
 
 use strict;

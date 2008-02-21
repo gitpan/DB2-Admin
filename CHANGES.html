@@ -9,6 +9,14 @@
 
 <UL>
 
+	<LI><A HREF="#Changes_in_the_2_8_release">Changes in the 2.8 release</A>
+	<UL>
+
+		<LI><A HREF="#Fix_core_dump_in_load_from_curso">Fix core dump in load from cursor</A>
+		<LI><A HREF="#BugFix_in_Load_Import">BugFix in Load / Import</A>
+		<LI><A HREF="#Add_the_ReOpt_option_to_the_Re">Add the 'ReOpt' option to the Rebind method</A>
+	</UL>
+
 	<LI><A HREF="#Changes_in_the_2_7_release">Changes in the 2.7 release</A>
 	<UL>
 
@@ -221,6 +229,44 @@
 
 <HR>
 <P>
+<H1><A NAME="Changes_in_the_2_8_release">Changes in the 2.8 release
+
+</A></H1>
+<P>
+<HR>
+<H2><A NAME="Fix_core_dump_in_load_from_curso">Fix core dump in load from cursor
+
+</A></H2>
+A bug in the db2Load command, introduced in the 2.7 release, caused a load
+from cursor (source type ``Statement'') to dump core. Now fixed.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="BugFix_in_Load_Import">BugFix in Load / Import
+
+</A></H2>
+A bug in the Load and Import methods prevented load/import operations
+against mixed-case schema and table names (which have to be double-quoted
+when passed to DB2). Now fixed.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Add_the_ReOpt_option_to_the_Re">Add the 'ReOpt' option to the Rebind method
+
+</A></H2>
+The re-optimization level can now be set at Rebind time.
+
+
+<P>
+
+<P>
+<HR>
 <H1><A NAME="Changes_in_the_2_7_release">Changes in the 2.7 release
 
 </A></H1>
