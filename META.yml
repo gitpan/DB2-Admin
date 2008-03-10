@@ -1,20 +1,20 @@
 meta-spec:
   version: 1.2
   url: http://module-build.sourceforge.net/META-spec-v1.2.html
-name:		DB2-Admin
-abstract:	Interface to DB2 Administrative API (non-SQL functions)
-author:		Hildo Biersma <Hildo.Biersma@MorganStanley.com>
-version:	2.8
-version_from:	lib/DB2/Admin.pm
-installdirs:	site
+name:         DB2-Admin
+abstract:     Interface to DB2 Administrative API (non-SQL functions)
+author:       Hildo Biersma <Hildo.Biersma@MorganStanley.com>
+version:      2.9
+version_from: lib/DB2/Admin.pm
+installdirs:  site
 build_requires:
-    Params::Validate:	0.87
+    Params::Validate: 0.87
 configure_requires:
-    Params::Validate:	0.87
+    Params::Validate: 0.87
 requires:
-    Params::Validate:	0.87
+    Params::Validate: 0.87
 recommends:
-    Test::Simple:	0.62
-license:	LGPL
-distribution_type:	module
-generated_by:	./util/write_yaml
+    Test::Simple: 0.62
+license:      LGPL
+distribution_type: module
+generated_by: ./util/write_yaml

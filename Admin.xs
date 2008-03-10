@@ -39,7 +39,7 @@
  * EFFECTIVELY USING THIS OR ANOTHER EQUIVALENT DISCLAIMER AS WELL AS
  * ANY OTHER LICENSE TERMS THAT MAY APPLY.
  *
- * $Id: Admin.xs,v 150.3 2008/02/21 21:47:09 biersma Exp $
+ * $Id: Admin.xs,v 155.2 2008/03/10 13:23:22 biersma Exp $
  */
 
 /* Perl XS includes */
@@ -218,7 +218,7 @@ static int check_connection(const char *db_alias)
 
 
 /*
- * Local helper function: convert a salar / array reference / undef
+ * Local helper function: convert a scalar / array reference / undef
  * into a sqlu_media_list entry.of type 'media'
  *
  * Used for export/import/load LOB/XML path/file handling
@@ -488,7 +488,7 @@ db_connect(db_alias, userid, passwd, attrs)
 	    ret = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE,
 				 &env_handle);
 	    if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-		warn("Error allocating environment handle)");
+		warn("Error allocating environment handle");
 		env_handle = SQL_NULL_HENV;
 		goto leave;
 	    }
@@ -3838,7 +3838,10 @@ db2Load(db_alias, load_action_string, input_columns, source_type, media_type, so
 
 	 /* Actually call db2Load */
 	 db2Load(DB2_VERSION_ENUM, &load_info, &global_sqlca);
-	 Safefree(source_media_info->target.location);
+	 if (source_media_info->media_type == SQLU_CLIENT_LOCATION ||
+	     source_media_info->media_type == SQLU_SERVER_LOCATION) {
+	     Safefree(source_media_info->target.location);
+	 }
 	 Safefree(source_media_info);
 	 Safefree(data_descriptor);
 	 Safefree(action_string);

@@ -1,7 +1,7 @@
 #
 # Test the load functions (V8.2 only)
 #
-# $Id: 62load.t,v 145.2 2007/10/17 14:42:40 biersma Exp $
+# $Id: 62load.t,v 155.1 2008/03/10 13:19:34 biersma Exp $
 #
 
 use strict;
@@ -19,7 +19,7 @@ my $export_dir = $myconfig{EXPORT_DIRECTORY};
 
 use strict;
 use Data::Dumper;
-use Test::More tests => 20;
+use Test::More tests => 21;
 BEGIN { use_ok('DB2::Admin'); }
 
 SKIP: {
@@ -127,30 +127,46 @@ SKIP: {
     ok(defined $results, "Load succeeded - DEL file w LOBs");
     #print STDERR Dumper($results);
 
+    #
+    # Test a load from a SQL statement (load from cursor)
+    #
+    $results = DB2::Admin->
+      Load('Database'       => $db_name,
+	   'Schema'         => $schema_name,
+	   'Table'          => $table_name,
+	   'SourceType'     => 'Statement',
+	   'LoadOptions'    => { 'NonRecoverable' => 1, },
+	   'Operation'      => 'Replace',
+	   'InputStatement' => "select * from $schema_name.$myconfig{SOURCE_TABLE}",
+	  );
+    ok(defined $results, "Load succeeded - SQL statement");
+    #print Dumper($results);
+
+
     skip("Load XML not available in DB2 version < 9.5", 12) if ($version < 9.5);
 
     $table_name = $myconfig{TARGET_XML_TABLE};
     foreach my $save (0, 1) {
 	foreach my $sep (0, 1) {
 	    foreach my $xml_parse (undef, 'Strip', 'Preserve') {
-		my $import_options = {};
+		my $load_options = { 'NonRecoverable' => 1, };
 		if (defined $xml_parse) {
-		    $import_options->{XmlParse} = $xml_parse;
+		    $load_options->{XmlParse} = $xml_parse;
 		}
 		
 		$results = DB2::Admin->
-		  Import('Database'      => $db_name,
-			 'Schema'        => $schema_name,
-			 'Table'         => $table_name,
-			 'InputFile'     => "$export_dir/export-test-xml-$save-$sep.ixf",
-			 'LogFile'       => "$export_dir/import-test-xml-$save-$sep.log",
-			 'FileType'      => 'IXF',
-			 'Operation'     => 'Replace',
-			 'ImportOptions' => $import_options,
-			 'XmlPath'       => $myconfig{XML_DIRECTORY},
-			);
-		ok(defined $results, "Import succeeded - IXF with XML (save=$save, sep=$sep)");
-		print STDERR Dumper($results);
+		  Load('Database'      => $db_name,
+		       'Schema'        => $schema_name,
+		       'Table'         => $table_name,
+		       'InputFile'     => "$export_dir/export-test-xml-$save-$sep.ixf",
+		       'LogFile'       => "$export_dir/import-test-xml-$save-$sep.log",
+		       'SourceType'    => 'IXF',
+		       'Operation'     => 'Replace',
+		       'LoadOptions'   => $load_options,
+		       'XmlPath'       => $myconfig{XML_DIRECTORY},
+		      );
+		ok(defined $results, "Load succeeded - IXF with XML (save=$save, sep=$sep, parse=$xml_parse)");
+		#print STDERR Dumper($results);
 	    }			# End foreach: XmlParse option
 	}			# End foreach: sep
     }				# End foreach: save

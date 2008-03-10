@@ -1,3 +1,12 @@
+=head1 Changes in the 2.9 release
+
+=head2 Fix core dump in load from cursor
+
+A second bug in the db2Load command, caused a load from cursor (source
+type "Statement") to perform an invalid free, sometimes leading to a
+core dump. Now fixed.  Have run valgrind on import/export/load to
+verify no additional mistakes are present.
+
 =head1 Changes in the 2.8 release
 
 =head2 Fix core dump in load from cursor

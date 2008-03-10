@@ -39,7 +39,7 @@
 # THIS OR ANOTHER EQUIVALENT DISCLAIMER AS WELL AS ANY OTHER LICENSE
 # TERMS THAT MAY APPLY.
 #
-# $Id: Admin.pm,v 150.3 2008/02/21 21:29:06 biersma Exp $
+# $Id: Admin.pm,v 155.1 2008/03/10 13:26:10 biersma Exp $
 #
 
 package DB2::Admin;
@@ -54,7 +54,7 @@ use DB2::Admin::Constants;
 use DB2::Admin::DataStream;
 
 use vars qw($VERSION);
-$VERSION = '2.8';
+$VERSION = '2.9';
 bootstrap DB2::Admin $VERSION;
 
 #

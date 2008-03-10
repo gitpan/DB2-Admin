@@ -9,6 +9,12 @@
 
 <UL>
 
+	<LI><A HREF="#Changes_in_the_2_9_release">Changes in the 2.9 release</A>
+	<UL>
+
+		<LI><A HREF="#Fix_core_dump_in_load_from_curso">Fix core dump in load from cursor</A>
+	</UL>
+
 	<LI><A HREF="#Changes_in_the_2_8_release">Changes in the 2.8 release</A>
 	<UL>
 
@@ -229,6 +235,24 @@
 
 <HR>
 <P>
+<H1><A NAME="Changes_in_the_2_9_release">Changes in the 2.9 release
+
+</A></H1>
+<P>
+<HR>
+<H2><A NAME="Fix_core_dump_in_load_from_curso">Fix core dump in load from cursor
+
+</A></H2>
+A second bug in the db2Load command, caused a load from cursor (source type
+``Statement'') to perform an invalid free, sometimes leading to a core
+dump. Now fixed. Have run valgrind on import/export/load to verify no
+additional mistakes are present.
+
+
+<P>
+
+<P>
+<HR>
 <H1><A NAME="Changes_in_the_2_8_release">Changes in the 2.8 release
 
 </A></H1>

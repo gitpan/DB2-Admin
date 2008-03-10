@@ -5,7 +5,7 @@
 #              build the tarball but out own mechanim to deal
 #              with the Morgan Stanley source environment.
 #
-# $Id: write_yaml,v 150.1 2007/12/10 20:48:55 biersma Exp $
+# $Id: write_yaml,v 155.1 2008/02/27 19:25:41 biersma Exp $
 #
 
 use strict;
@@ -20,23 +20,23 @@ print META <<_END_META_;
 meta-spec:
   version: 1.2
   url: http://module-build.sourceforge.net/META-spec-v1.2.html
-name:		DB2-Admin
-abstract:	Interface to DB2 Administrative API (non-SQL functions)
-author:		Hildo Biersma <Hildo.Biersma\@MorganStanley.com>
-version:	$args{release}
-version_from:	lib/DB2/Admin.pm
-installdirs:	site
+name:         DB2-Admin
+abstract:     Interface to DB2 Administrative API (non-SQL functions)
+author:       Hildo Biersma <Hildo.Biersma\@MorganStanley.com>
+version:      $args{release}
+version_from: lib/DB2/Admin.pm
+installdirs:  site
 build_requires:
-    Params::Validate:	0.87
+    Params::Validate: 0.87
 configure_requires:
-    Params::Validate:	0.87
+    Params::Validate: 0.87
 requires:
-    Params::Validate:	0.87
+    Params::Validate: 0.87
 recommends:
-    Test::Simple:	0.62
-license:	LGPL
-distribution_type:	module
-generated_by:	$0
+    Test::Simple: 0.62
+license:      LGPL
+distribution_type: module
+generated_by: $0
 _END_META_
 ;
 close(META);
