@@ -39,7 +39,7 @@
 # THIS OR ANOTHER EQUIVALENT DISCLAIMER AS WELL AS ANY OTHER LICENSE
 # TERMS THAT MAY APPLY.
 #
-# $Id: Admin.pm,v 155.1 2008/03/10 13:26:10 biersma Exp $
+# $Id: Admin.pm,v 160.1 2008/03/24 15:26:09 biersma Exp $
 #
 
 package DB2::Admin;
@@ -54,7 +54,7 @@ use DB2::Admin::Constants;
 use DB2::Admin::DataStream;
 
 use vars qw($VERSION);
-$VERSION = '2.9';
+$VERSION = '3.0';
 bootstrap DB2::Admin $VERSION;
 
 #
@@ -1642,6 +1642,70 @@ sub ClientInfo {
 }
 
 
+#
+# Backup a database, or specific tablespaces / nodes.
+#
+# Hash with named parameters, many optional:
+# - Database
+# - Target: directory/path or ref to array of same (optional for TSM)
+# - Tablespaces: optional ref to list of tablespaces
+# - Options (hash reference)
+#   - Type: Full / Incremental / Delta (default Full)
+#   - Action (Start, NoInterrupt, Continue, Terminate, DeviceTerminate,
+#             ParamCheck, ParamCheckOnly) (default: NoInterrupt)
+#   - Nodes: 'All', or reference to list of nodes (optional) (V9.5)
+#   - ExceptNodes: reference to list of nodes to skip (optional) (V9.5)
+#   - Online: boolean, default zero (offline)
+#   - Compress: boolean (default zero)
+#   - IncludeLogs: boolean (online only)
+#   - ExcludeLogs: boolean (online only)
+#   - ImpactPriority (0..100, default 50)
+#   - Parallelism: 1..1024 (default computed by DB2)
+#   - NumBuffers (integer, minimum 2)
+#   - BufferSize (integer, minimum 8)
+#   - TargetType (optional: Local, XBSA, Snapshot, TSM, Other; default Local)
+#   - Userid (optional)
+#   - Password (optional)
+#
+sub Backup {
+    my $class = shift;
+    my %params = validate(@_, { 'Database'    => 1,
+				'Target'      => 1,
+				'Tablespaces' => 0,
+				'Options'     => HASHREF,
+			      },
+			 );
+
+    #
+    # The XS code expects a reference to an array; we support either
+    # a string or an array, and we translate this at the perl level.
+    #
+    unless (ref $params{Target}) {
+	$params{Target} = [ $params{Target} ];
+    }
+
+    #
+    # A full backup is indicated by an empty list of tablespaces.
+    #
+    $params{Tablespaces} ||= [];
+
+    #
+    # Handle default options
+    #
+    my $options = $params{Options};
+    $options->{Type} ||= 'Full';
+    $options->{Online} ||= 0;
+
+    my $rc = db2Backup($params{Database},
+		       $params{Target},
+		       $params{Tablespaces},
+		       $params{Options},
+		      );
+    $class->_handle_error("Backup");
+    return $rc;
+}
+
+
 #------------------------------------------------------------------------
 
 #
@@ -2084,6 +2148,16 @@ DB2::Admin - Support for DB2 Administrative API from perl
   DB2::Admin->Rebind('Database' => $db_name,
 		     'Schema'   => $schema_name,
                      'Package'  => $pkg_name);
+
+  # Backup a database (or database partition)
+  DB2::Admin->Backup('Database' => $db_name,
+                     'Target'   => $backup_dir,
+                     'Options'  => { 'Online' => 1, 'Compress' => 1, });
+
+  # Backup all nodes of a DPF database (V9.5 only)
+  DB2::Admin->Backup('Database' => $db_name,
+                     'Target'   => $backup_dir,
+                     'Options'  => { 'Online' => 1, 'Nodes' => 'All', });
 
 =head1 DESCRIPTION
 
@@ -4525,6 +4599,175 @@ The accounting string.
 
 The return value from this method is a hash with the same four fields,
 all of which will be present only if the value is non-empty.
+
+=head2 Backup
+
+This method performs a database backup.  For a DPF database, it backs
+up the node specified in the C<DB2NODE> environment variable.  In DB2
+V9.5, it can back up all nodes of a DPF database.
+
+This method takes four named parameters and returns a hash reference,
+described in more detail after the parameters.
+
+=over 4
+
+=item Database
+
+The database name or alias.  This parameter is required.
+
+=item Target
+
+The database target.  This can either be a string (a directory name)
+or a reference to an array of directory names.  This parameter is
+required.
+
+=item Tablespaces
+
+An optional array reference with a lkist of tablespace names to back
+up.  Specifying this parameter switches from a database backup to a
+tablespace backup.
+
+=item Options
+
+A required hash reference with backup options.
+
+=over 4
+
+=item Type
+
+The type of backup.  This cna be C<Full>, C<Incremental> or C<Delta>.
+
+=item Action
+
+The backup action.  Technically, the abckup cna either eb fully
+automated (the default), or it can go through multiple phases:
+parameter check, start, promt, continue, etc.  This parameter allows
+the user to specify the backup type/stage.  Supported values are
+C<NoInterrupt> (the default), C<Start>, C<Continue>, C<Terminate>,
+C<DeviceTerminate>, C<ParamCheck> and C<ParamCheckOnly>.
+
+=item Nodes
+
+This parameter is only valid on DB2 V9.5 and only for DPF databases.
+It can be C<All> for a system-wide backup of all DPF nodes, or a
+reference to an array of node numbers to back up.  Use of this
+parameter triggers the creation of the C<NodeInfo> field in the return
+value.  It is mutually exclusive with the C<ExceptNodes> parameter.
+
+=item ExceptNodes
+
+This parameter is only valid on DB2 V9.5 and only for DPF databases.
+It is reference to an array of node numbers I<not> to back up.  Use of
+this parameter triggers the creation of the C<NodeInfo> field in the
+return value.  It is mutually exclusive with the C<Nodes> parameter.
+
+=item Online
+
+A boolean option specifying an online or offline backup.  The default
+is an offline backup.
+
+=item Compress
+
+A boolean option specifying whether to compress the backup.  The
+default is a non-compressed backup.
+
+=item IncludeLogs
+
+A boolean option specifying that database logs must be included.  This
+parameter is mutually exclusive with the C<ExcludeLogs> option.
+Omitting both C<IncludeLogs> and C<ExcludeLogs> selects the default
+for the backup type, which is to include logs for snapshot backups and
+to exclude logs in all other cases.
+
+=item ExcludeLogs
+
+A boolean option specifying that database logs must be excluded.  This
+parameter is mutually exclusive with the C<IncludeLogs> option.
+Omitting both C<IncludeLogs> and C<ExcludeLogs> selects the default
+for the backup type, which is to include logs for snapshot backups and
+to exclude logs in all other cases.
+
+=item ImpactPriority
+
+An integer specifying the impact priority.  When omitted, the backup
+runs unthrottled.
+
+=item Parallelism
+
+An integer specifying the degree of parallelism (number of buffer
+manipulators).
+
+=item NumBuffers
+
+An integer specifying the number of backup buffers to be used.
+
+=item BufferSize
+
+An integer specifying the size of the abckup buffer in 4K pages.
+
+=item TargetType
+
+The backup target type.  The default is C<Local>, i.e. a backup to a
+filesystem.  Other options are C<XBSA>, C<TSM>, C<Snapshot> and
+C<Other>.
+
+=item Userid
+
+An optional connect userid.
+
+=item Password
+
+An optional password to be used with the connect userid.
+
+=back
+
+=back
+
+The return value of the C<Backup> method is a reference to a hash with
+the following entries:
+
+=over 4
+
+=item ApplicationId
+
+=item Timestamp
+
+=item BackupSize
+
+The size of the backup in megabytes
+
+=item SQLCode
+
+=item Message
+
+The error message if the SQL code is not zero
+
+=item State
+
+The description if the SQL state, if available
+
+=item NodeInfo
+
+An optional array reference with per-node information.  This is only
+available for DPF databases where the C<Nodes> or C<ExceptNodes>
+option was specified.  Each array element is a hash reference with the
+following elements (C<Message> and C<State> are optional):
+
+=over 4
+
+=item NodeNum
+
+=item BackupSize
+
+=item SQLCode
+
+=item Message
+
+=item State
+
+=back
+
+=back
 
 =head1 AUTHOR
 

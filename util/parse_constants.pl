@@ -4,7 +4,7 @@
 #                      files and create perl source code to to look
 #                      up information and map numbers to strings
 #
-# $Id: parse_constants.pl,v 145.2 2007/11/20 21:52:57 biersma Exp $
+# $Id: parse_constants.pl,v 160.1 2008/05/29 19:12:08 biersma Exp $
 #
 
 use strict;
@@ -200,6 +200,7 @@ sub parse_header_files {
 	    } elsif ($name =~ /^SQLM_\w+_TABLE$/) {
 		$category = 'TableType';
 	    } elsif ($name =~ /^SQLM_UTILITY_\S+$/ &&
+		     $name !~ /^SQLM_UTILITY_(STATE|INVOKER)_/ &&
 		     $name ne 'SQLM_UTILITY_UNTHROTTLED') {
 		$category = 'UtilityType';
 	    } elsif ($name =~ /^SQLM_HADR_ROLE_/) {

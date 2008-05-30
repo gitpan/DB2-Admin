@@ -52,10 +52,7 @@ release combinations to the maintainer.
 
   Operating System        DB2 Version        Perl Version
   ================        ===========        ============
-  Solaris 7 (SPARC)       7.2                5.8
-  Solaris 8 (SPARC)       8.2                5.8
-  Solaris 10 (SPARC)      9.1                5.8
-  Solaris 10 (SPARC)      9.5                5.8
+  AIX (unknown release)	  8.2		     5.8
   Red Hat EL 3 (x86)      8.1                5.8
   Red Hat EL 3 (x86)      8.2                5.8
   Red Hat EL 3 (x86)      9.1                5.8
@@ -63,6 +60,10 @@ release combinations to the maintainer.
   Red Hat EL 4 (x86_64)   8.2                5.8
   Red Hat EL 4 (x86_64)   9.1                5.8
   Red Hat EL 4 (x86_64)   9.5                5.8
+  Solaris 7 (SPARC)       7.2                5.8
+  Solaris 8 (SPARC)       8.2                5.8
+  Solaris 10 (SPARC)      9.1                5.8
+  Solaris 10 (SPARC)      9.5                5.8
 
 =head1 INSTALLATION
 
@@ -83,11 +84,14 @@ release you have installed.  For example, if you're running DB2 Viper
 
   export DB2_VERSION=V9.1
 
-If you're not on Linux or Solaris (or if you've installed DB2 in a
-different location than the Makefile.PL file expects), you also have
+If you're not on Linux, Solaris or AIX (or if you've installed DB2 in
+a different location than the Makefile.PL file expects), you also have
 to specify the path where the DB2 files can be found, for example:
 
   export DB2_PREFIX=/opt/IBM/db2/V9.1
+
+The common environment variables DB2DIR and DB2_HOME can be used as
+well.
 
 Please report the default prefix for platforms that the author doesn't
 have access to (i.e. not Linux, Solaris), so the module can support
@@ -129,7 +133,7 @@ The code is currently maintained and supported by:
 =cut
 
 #
-# $Id: README,v 150.1 2008/02/21 21:31:58 biersma Exp $
+# $Id: README,v 160.1 2008/05/28 18:32:34 biersma Exp $
 # 
 # Copyright (c) 2007-2008, Morgan Stanley & Co. Incorporated
 # See ..../COPYING for terms of distribution.

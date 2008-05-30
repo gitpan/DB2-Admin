@@ -39,7 +39,7 @@
  * EFFECTIVELY USING THIS OR ANOTHER EQUIVALENT DISCLAIMER AS WELL AS
  * ANY OTHER LICENSE TERMS THAT MAY APPLY.
  *
- * $Id: Admin.xs,v 155.2 2008/03/10 13:23:22 biersma Exp $
+ * $Id: Admin.xs,v 160.3 2008/05/28 18:31:23 biersma Exp $
  */
 
 /* Perl XS includes */
@@ -61,10 +61,12 @@
 
 /* Static data retained within the module */
 static struct sqlca  global_sqlca;  /* Error state */
-static pid_t         env_pid = 0; /* Pod for which env is allocated */
 static SQLHDBC       env_handle = SQL_NULL_HENV; /* Environment handle */
 static HV           *db_handles = NULL; /* Hash of database handles */
 static SQLHANDLE     cur_db_handle = SQL_NULL_HDBC; /* Current db handle */
+#ifndef _WIN32			/* Unix-specific */
+static pid_t         env_pid = 0; /* Process id for which env is allocated */
+#endif
 
 #define SWITCHES_BUFFER_SIZE 1024
 #define MESSAGE_BUFFER_SIZE 1024
@@ -107,9 +109,10 @@ static unsigned int padstrlen(const char *ptr_, unsigned int maxlen_) {
 void _do_cleanup_connections() {
     int pid_changed = 0;
 
+#ifndef _WIN32			/* Unix-specific */
     if (env_pid != getpid())
 	pid_changed = 1;
-
+#endif
     /* Clean up database handles */
     if (db_handles) {
 	SQLHANDLE  db_handle;
@@ -163,7 +166,9 @@ void _do_cleanup_connections() {
 	env_handle = SQL_NULL_HENV;
     }
 
+#ifndef _WIN32			/* Unix-specific */
     env_pid = 0;
+#endif
 }
 
 
@@ -179,12 +184,13 @@ static int check_connection(const char *db_alias)
 {
     SV **elem;
 
+#ifndef _WIN32			/* Unix-specific */
     /* Check whether process id has changed */
     if (env_pid != 0 &&	env_pid != getpid()) {
 	_do_cleanup_connections();
 	return 0;
     }
-
+#endif
     /* Look up the database connection and mark it as active */
     if (db_handles == NULL) {
 	warn("A database connection must exist");
@@ -476,15 +482,17 @@ db_connect(db_alias, userid, passwd, attrs)
 	SV        **elem, *value;
         char       *key;
         I32         keylen;
-
+#ifndef _WIN32			/* Unix-specific */
 	/* Check whether process id has changed */
 	if (env_pid != 0 && env_pid != getpid()) {
 	    _do_cleanup_connections();
 	}
-
+#endif
         /* Allocate an environment handle on first call */
         if (env_handle == SQL_NULL_HENV) {
+#ifndef _WIN32			/* Unix-specific */
 	    env_pid = getpid();
+#endif
 	    ret = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE,
 				 &env_handle);
 	    if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
@@ -648,12 +656,12 @@ db_disconnect(db_alias)
 	SQLHANDLE   db_handle;
 	int	    error = 0;
 	SV        **elem;
-	
+#ifndef _WIN32			/* Unix-specific */
 	/* Check whether process id has changed */
 	if (env_pid != 0 && env_pid != getpid()) {
 	    _do_cleanup_connections();
 	}
-
+#endif
 	if (db_handles == 0) {
 	    warn("No database connections exist");
 	    error = 1;
@@ -1277,7 +1285,7 @@ db2CfgSet(params, flags, dbname, version)
      {
 #ifdef ADMIN_API_HAVE_DB2CFG	/* Support starts in DB2 V8.1 */
 	 char        *key;
-	 int          array_length, counter, *sizes, error = 0;
+	 int          array_length, counter, error = 0;
 	 AV          *params_array;
 	 HV          *flags_hash;
 	 I32          keylen;
@@ -2626,7 +2634,7 @@ db2Export(db_alias, select_sql, file_type, data_file, msg_file, file_options, lo
     {
 	int                      error = 0;
 	void                    *newz_ptr;
-	SV                     **elem, *Return;
+	SV                      *Return;
         struct sqlchar          *filetype_mod = NULL;
         struct sqldcol           data_descriptor;
 	struct sqlu_media_list  *lob_path_info, *lob_file_info;
@@ -2815,7 +2823,7 @@ db2Import(db_alias, import_sql, file_type, data_file, input_columns, msg_file, f
      PPCODE:
      {
 	 int                      error = 0;
-	 SV                     **elem, *value;
+	 SV                      *value;
 	 struct sqlchar          *filetype_mod = NULL;
 #ifdef ADMIN_API_HAVE_IMPORT_LONG_ACTION /* DB2 V9.5 and up */
 	 struct sqllob           *action_string = NULL;
@@ -3181,6 +3189,7 @@ db2Import(db_alias, import_sql, file_type, data_file, input_columns, msg_file, f
 #
 # Returns:
 # - Ref to hash with rows loaded/replaced/failed/etc
+# - Ref to array with DPF details
 #
 SV *
 db2Load(db_alias, load_action_string, input_columns, source_type, media_type, source_list, copy_list, msg_file, tempfiles_path, file_options, load_options, dpf_options, lob_paths, xml_paths)
@@ -3203,7 +3212,7 @@ db2Load(db_alias, load_action_string, input_columns, source_type, media_type, so
      {
 #ifdef ADMIN_API_HAVE_DB2LOAD
 	 int                           error = 0;
-	 SV                          **elem, *value;
+	 SV                           *value;
 	 char                         *key;
 	 void                         *newz_ptr;
 	 I32	                       keylen;
@@ -3864,7 +3873,7 @@ db2Load(db_alias, load_action_string, input_columns, source_type, media_type, so
 	 if (global_sqlca.sqlcode < 0) /* 0: OK, > 0: warning */
 	     error = 1;
 
-	 /* Return a hash with import details if okay, undef on error */
+	 /* Return a hash with load details if okay, undef on error */
      leave:
 	 if (error == 0) {
 	     HV *retval, *part_retval;
@@ -3911,7 +3920,7 @@ db2Load(db_alias, load_action_string, input_columns, source_type, media_type, so
 			 agent_elem = newHV();
 			 ai = part_output_info.poAgentInfoList + counter;
 			 hv_store(agent_elem, "SQLCode", 7,
-				  newSVuv(ai->oSqlcode), FALSE);
+				  newSViv(ai->oSqlcode), FALSE);
 			 switch (ai->oTableState) {
 			 case DB2LOADQUERY_NORMAL:
 			     ptr = "Normal";
@@ -4019,7 +4028,7 @@ db2LoadQuery(db_alias, table_name, msg_type, msg_file)
 	 }
 
 	 db2LoadQuery(DB2_VERSION_ENUM, &query_info, &global_sqlca);
-	 /* Return a hash with import details if okay, undef on error */
+	 /* Return a hash with load query details if okay, undef on error */
 	 if (global_sqlca.sqlcode >= 0) { /* 0: OK, > 0: warning */
 	     HV   *retval;
 	     SV   *Return;
@@ -4133,10 +4142,6 @@ sqlarbnd(dbname, package, options)
     {
 	struct sqlopt  *rebind_options = NULL;
 	int             num_opts, rc, error = 0;
-	SV            **elem;
-	SQLHANDLE       db_handle;
-	char           *buf;
-	STRLEN          len;
 
 	rc = check_connection(dbname);
 	if (rc == 0) {
@@ -4162,14 +4167,14 @@ sqlarbnd(dbname, package, options)
 	    I32	  keylen;
 	    SV	 *value;
 	    int   offset = 0;
-	    
+	
 	    Newz(0, newz_ptr,
 		 sizeof(struct sqlopt) + num_opts * sizeof(struct sqloptions),
 		 char);
 	    rebind_options = newz_ptr;
 	    rebind_options->header.allocated = num_opts;
 	    rebind_options->header.used = num_opts;
-	    
+	
 	    (void)hv_iterinit((HV*)SvRV(options));
 	    while ((value = hv_iternextsv((HV*)SvRV(options),
 					  (char **)&key, &keylen))) {
@@ -4279,7 +4284,6 @@ db2ListHistory(dbname, action, obj_name, start_time)
 	    { NULL, NULL, NULL, 0, 0, DB2HISTORY_LIST_HISTORY, 0 };
 	struct db2HistoryGetEntryStruct  entry_info;
 	struct db2HistoryData            entry_data;
-	db2Uint16                        history_handle;
 	int                              error = 0, counter;
 	AV                              *retval;
 
@@ -5253,6 +5257,439 @@ db2ClientInfo(dbname, client_info)
 	Return = newRV_noinc((SV*)retval);
 	XPUSHs(Return);
     }
+
+
+#
+# Perform a backup
+#
+# Parameters:
+# - Database name
+# - Target (ref to array of strings)
+# - Tablespaces (ref to array of tablespaces)
+# - Options (hash reference)
+# Returns:
+# - Ref to hash with ApplicationId/Timestamp/BackupSize/SQLCode/NodeInfo/...
+#
+SV *
+db2Backup(db_alias, target, tbspaces, options)
+     char *db_alias;
+     SV   *target;
+     SV   *tbspaces;
+     SV   *options;
+
+     PPCODE:
+     {
+#ifdef ADMIN_API_HAVE_DB2BACKUP
+	 db2BackupStruct            backup_info;
+	 db2MediaListStruct         location_info = { NULL, 0, 0 };
+	 char                     **locations = NULL;
+	 db2TablespaceStruct        tablespace_info = { NULL, 0 };
+	 char                     **tablespaces = NULL;
+#ifdef DB2BACKUP_MPP
+	 db2NodeType               *node_list = NULL;
+	 db2BackupMPPOutputStruct  *mpp_output = NULL;
+#endif /* DB2BACKUP_MPP */
+	 SV                        *value;
+	 char                      *key;
+	 I32	                    keylen;
+
+	 /* Check target is valid */
+	 if ((!SvROK(target)) ||
+	     (SvTYPE(SvRV(target)) != SVt_PVAV)) {
+	     croak("Array reference expected for parameter 'target'");
+	 }
+	 /* Check tablespaces is valid */
+	 if ((!SvROK(tbspaces)) ||
+	     (SvTYPE(SvRV(tbspaces)) != SVt_PVAV)) {
+	     croak("Array reference expected for parameter 'tbspaces'");
+	 }
+	 /* Check options is valid */
+	 if ((!SvROK(options)) ||
+	     (SvTYPE(SvRV(options)) != SVt_PVHV)) {
+	     croak("Hash reference expected for parameter 'options'");
+	 }
+
+	 /*
+	  * The backup structure differs between DB2 releases,
+	  * so it's hard to write an initializer.  We will
+	  * just zero it.
+	  */
+	 memset(&backup_info, 0, sizeof(backup_info));
+	 backup_info.piDBAlias = db_alias;
+
+	 /* Set up target */
+	 backup_info.piMediaList = &location_info;
+	 backup_info.iCallerAction = DB2BACKUP_NOINTERRUPT; /* See Action below */
+	 location_info.locationType = SQLU_LOCAL_MEDIA;	 /* See TargetType below */
+	 if (av_len((AV*)SvRV(target)) >= 0) {
+	     AV     *media;
+	     I32     no_entries, counter;
+	     size_t  total = 0;
+
+	     media = (AV*)SvRV(target);
+	     no_entries = av_len(media) + 1;
+	     location_info.numLocations = no_entries;
+	     Newz(0, locations, no_entries, char *);
+	     location_info.locations = locations;
+
+	     for (counter = 0; counter < no_entries; counter++) {
+		 SV **array_elem;
+		
+		 array_elem = av_fetch(media, counter, FALSE);
+		 if (SvPOK(*array_elem)) {
+		     char   *val;
+		     STRLEN  len;
+		
+		     val = SvPV(*array_elem, len);
+		     locations[counter] = val;
+		 } else {
+		     croak("Element '%d' (offset-zero based) in target array is invalid: not a string\n", counter);
+		 }
+	     }
+	 } /* End if: have target entries */
+
+	 /* Set up tablespaces */
+	 if (av_len((AV*)SvRV(tbspaces)) >= 0) {
+	     AV     *tblist;
+	     I32     no_entries, counter;
+	     size_t  total = 0;
+
+	     backup_info.iOptions |= DB2BACKUP_TABLESPACE;
+	     backup_info.piTablespaceList = &tablespace_info;
+	     tblist = (AV*)SvRV(tbspaces);
+	     no_entries = av_len(tblist) + 1;
+	     tablespace_info.numTablespaces = no_entries;
+	     Newz(0, tablespaces, no_entries, char *);
+	     tablespace_info.tablespaces = tablespaces;
+
+	     for (counter = 0; counter < no_entries; counter++) {
+		 SV **array_elem;
+		
+		 array_elem = av_fetch(tblist, counter, FALSE);
+		 if (SvPOK(*array_elem)) {
+		     char   *val;
+		     STRLEN  len;
+		
+		     val = SvPV(*array_elem, len);
+		     tablespaces[counter] = val;
+		 } else {
+		     croak("Element '%d' (offset-zero based) in tablespaces array is invalid: not a string\n", counter);
+		 }
+	     }
+	 } else {
+	     backup_info.iOptions |= DB2BACKUP_DB;
+	 } /* End if: have tablespace entries */
+
+	 /*
+	  * Handle the backup options (hash reference):
+	  * - Type
+	  * - Action
+	  * - Nodes
+	  * - ExceptNodes
+	  * - Online
+	  * - Compress
+	  * - IncludeLogs
+	  * - ExcludeLogs
+	  * - ImpactPriority
+	  * - Parallelism
+	  * - NumBuffers
+	  * - BufferSize
+	  * - TargetType
+	  * - Userid
+	  * - Password
+	  */
+	 (void)hv_iterinit((HV*)SvRV(options));
+	 while ((value = hv_iternextsv((HV*)SvRV(options),
+				       (char **)&key, &keylen))) {
+	     if (strEQ(key, "Type")) { /* Full / Incremental / Delta */
+		 if (SvPOK(value)) {
+		     char   *val;
+		     STRLEN  len;
+		
+		     val = SvPV(value, len);
+		     if (strEQ(val, "Full")) {
+			 /* Default: nothing to do */
+		     } else if (strEQ(val, "Incremental")) {
+			 backup_info.iOptions |= DB2BACKUP_INCREMENTAL;
+		     } else if (strEQ(val, "Delta")) {
+			 backup_info.iOptions |= DB2BACKUP_DELTA;
+		     } else {
+			 croak("Unsupported value '%s' for Options key '%s'\n",
+			       val, key);
+		     }		
+		 } else {
+		     croak("Illegal value for Options key '%s': not a string\n", key);
+		 }
+	     } else if (strEQ(key, "Action")) {
+		 if (SvPOK(value)) {
+		     char   *val;
+		     STRLEN  len;
+		
+		     val = SvPV(value, len);
+		     if (strEQ(val, "Start")) {
+			 backup_info.iCallerAction = DB2BACKUP_BACKUP;
+		     } else if (strEQ(val, "NoInterrupt")) {
+			 backup_info.iCallerAction = DB2BACKUP_NOINTERRUPT;
+		     } else if (strEQ(val, "Continue")) {
+			 backup_info.iCallerAction = DB2BACKUP_CONTINUE;
+		     } else if (strEQ(val, "Terminate")) {
+			 backup_info.iCallerAction = DB2BACKUP_TERMINATE;
+		     } else if (strEQ(val, "DeviceTerminate")) {
+			 backup_info.iCallerAction = DB2BACKUP_DEVICE_TERMINATE;
+		     } else if (strEQ(val, "ParamCheck")) {
+			 backup_info.iCallerAction = DB2BACKUP_PARM_CHK;
+		     } else if (strEQ(val, "ParamCheckOnly")) {
+			 backup_info.iCallerAction = DB2BACKUP_PARM_CHK_ONLY;
+		     } else {
+			 croak("Unsupported value '%s' for Options key '%s'\n",
+			       val, key);
+		     }		
+		 } else {
+		     croak("Illegal value for Options key '%s': not a string\n", key);
+		 }
+#ifdef DB2BACKUP_MPP
+	     } else if (strEQ(key, "Nodes") || strEQ(key, "ExceptNodes")) {
+		 if (backup_info.iOptions & DB2BACKUP_MPP)
+		     croak("The options 'Nodes' and 'ExceptNodes' may not be combinbed\n");
+		 backup_info.iOptions |= DB2BACKUP_MPP;
+		 if (strEQ(key, "Nodes") && SvPOK(value)) {
+		     char   *val;
+		     STRLEN  len;
+
+		     val = SvPV(value, len);
+		     if (strEQ(val, "All"))
+			 backup_info.iAllNodeFlag = DB2_ALL_NODES;
+		     else
+			 croak("Invalid Options key %s value %s: must be 'All' or array-reference\n", key, val);
+		 } else if (SvROK(value) && SvTYPE(SvRV(value)) == SVt_PVAV) {
+		     AV     *nodes;
+		     I32     no_nodes, counter;
+
+		     if (strEQ(key, "Nodes"))
+			 backup_info.iAllNodeFlag = DB2_NODE_LIST;
+		     else
+			 backup_info.iAllNodeFlag = DB2_ALL_EXCEPT;
+
+		     nodes = (AV*)SvRV(value);
+		     no_nodes = backup_info.iNumNodes = av_len(nodes) + 1;
+		     Newz(0, node_list, no_nodes, db2NodeType);
+		     backup_info.piNodeList = node_list;
+		     for (counter = 0; counter < no_nodes; counter++) {
+			 SV **array_elem;
+		
+			 array_elem = av_fetch(nodes, counter, FALSE);
+			 if ((!SvROK(*array_elem)) && looks_like_number(*array_elem)) {
+			     node_list[counter] = SvUV(*array_elem);
+			 } else {
+			     croak("Element '%d' (offset-zero based) in %s array is invalid: not a number\n", counter, key);
+			 }
+		     } /* End: for each node */
+		 } else {
+		     croak("Illegal value for Options key '%s': must be an array reference, or 'All' for key 'Nodes'\n", key);
+		 }
+
+		 /* 
+		  * Set up output list.  Size it at maximum of 1024 nodes.
+		  *
+		  * We configure the first node to look like the last-node
+		  * marker that db2Backup writes when successful.
+		  */
+		 Newz(0, mpp_output, 1024, db2BackupMPPOutputStruct);
+		 backup_info.iNumMPPOutputStructs = 1024;
+		 backup_info.poMPPOutputStruct = mpp_output;
+		 mpp_output[0].nodeNumber = (db2NodeType)-1;
+#endif /* DB2BACKUP_MPP */
+	     } else if (strEQ(key, "Online")) { /* Boolean */
+		 if (SvTRUE(value)) {
+		     backup_info.iOptions |= DB2BACKUP_ONLINE;
+		 } else {
+		     backup_info.iOptions |= DB2BACKUP_OFFLINE;
+		 }
+	     } else if (strEQ(key, "Compress")) { /* Boolean */
+		 if (SvTRUE(value)) {
+		     backup_info.iOptions |= DB2BACKUP_COMPRESS;
+		 }
+	     } else if (strEQ(key, "IncludeLogs")) { /* Boolean */
+		 if (SvTRUE(value)) {
+		     backup_info.iOptions |= DB2BACKUP_INCLUDE_LOGS;
+		 }
+	     } else if (strEQ(key, "ExcludeLogs")) { /* Boolean */
+		 if (SvTRUE(value)) {
+		     backup_info.iOptions |= DB2BACKUP_EXCLUDE_LOGS;
+		 }
+	     } else if (strEQ(key, "ImpactPriority")) { /* 32-bit unsgn number */
+		 if ((!SvROK(value)) && looks_like_number(value)) {
+		     backup_info.iUtilImpactPriority = SvUV(value);
+		 } else {
+		     croak("Illegal value for Options key '%s': not a number\n", key);
+		 }
+	     } else if (strEQ(key, "Parallelism")) { /* 32-bit unsg number */
+		 if ((!SvROK(value)) && looks_like_number(value)) {
+		     backup_info.iParallelism = SvUV(value);
+		 } else {
+		     croak("Illegal value for Options key '%s': not a number\n", key);
+		 }
+	     } else if (strEQ(key, "NumBuffers")) { /* 32-bit unsg number */
+		 if ((!SvROK(value)) && looks_like_number(value)) {
+		     backup_info.iNumBuffers = SvUV(value);
+		 } else {
+		     croak("Illegal value for Options key '%s': not a number\n", key);
+		 }
+	     } else if (strEQ(key, "BufferSize")) { /* 32-bit unsg number */
+		 if ((!SvROK(value)) && looks_like_number(value)) {
+		     backup_info.iBufferSize = SvUV(value);
+		 } else {
+		     croak("Illegal value for Options key '%s': not a number\n", key);
+		 }
+	     } else if (strEQ(key, "TargetType")) { /* String */
+		 if (SvPOK(value)) {
+		     char   *val;
+		     STRLEN  len;
+		
+		     val = SvPV(value, len);
+		     if (strEQ(val, "Local")) {
+			 location_info.locationType = SQLU_LOCAL_MEDIA;
+#ifdef SQLU_XBSA_MEDIA
+		     } else if (strEQ(val, "XBSA")) {
+			 location_info.locationType = SQLU_XBSA_MEDIA;
+#endif /* SQLU_XBSA_MEDIA */
+		     } else if (strEQ(val, "TSM")) {
+			 location_info.locationType = SQLU_TSM_MEDIA;
+#ifdef SQLU_SNAPSHOT_MEDIA
+		     } else if (strEQ(val, "Snapshot")) {
+			 location_info.locationType = SQLU_SNAPSHOT_MEDIA;
+#endif /* SQLU_SNAPSHOT_MEDIA */
+		     } else if (strEQ(val, "Other")) {
+			 location_info.locationType = SQLU_OTHER_MEDIA;
+		     } else {
+			 croak("Unsupported value '%s' for Options key '%s'\n",
+			       val, key);
+		     }
+		 } else {
+		     croak("Illegal value for Options key '%s': not a string\n", key);
+		 }
+	     } else if (strEQ(key, "Userid")) { /* String */
+		 if (SvPOK(value)) {
+		     STRLEN  len;
+		
+		     backup_info.piUsername = SvPV(value, len);
+		 } else {
+		     croak("Illegal value for Options key '%s': not a string\n", key);
+		 }
+	     } else if (strEQ(key, "Password")) { /* String */
+		 if (SvPOK(value)) {
+		     STRLEN  len;
+		
+		     backup_info.piPassword = SvPV(value, len);
+		 } else {
+		     croak("Illegal value for Options key '%s': not a string\n", key);
+		 }
+	     } else {
+		 croak("Unexpected Options key '%s'", key);
+	     }
+	 } /* End: each hash entry */
+
+	 /* Actually call db2Backup */
+	 db2Backup(DB2_VERSION_ENUM, &backup_info, &global_sqlca);
+	 Safefree(locations);
+	 Safefree(tablespaces);
+
+	 /* Return a hash with backup details if okay, undef on error */
+     leave:
+	 {
+	     HV   *retval;
+	     SV   *Return;
+	     char  buffer[MESSAGE_BUFFER_SIZE];
+	     int   status;
+	
+	     /* Main return code */
+	     retval = (HV*)sv_2mortal((SV*)newHV());
+	     if (backup_info.oApplicationId[0]) { /* SKip empty string */
+		 hv_store(retval, "ApplicationId", 13,
+			  newSVpv(backup_info.oApplicationId, strlen(backup_info.oApplicationId)), FALSE);
+	     }
+	     if (backup_info.oTimestamp[0]) { /* Skip empty string */
+		 hv_store(retval, "Timestamp", 9,
+			  newSVpv(backup_info.oTimestamp, strlen(backup_info.oTimestamp)), FALSE);
+	     }
+             hv_store(retval, "BackupSize", 10,
+                      newSVuv(backup_info.oBackupSize), FALSE);
+	     hv_store(retval, "SQLCode", 7,
+		      newSViv(global_sqlca.sqlcode), FALSE);
+	     status = sqlaintp(buffer, MESSAGE_BUFFER_SIZE, 0,
+			       &global_sqlca);
+	     if (status > 0) {
+		 hv_store(retval, "Message", 7,
+			  newSVpv(buffer, status), FALSE);
+	     }
+	     status = sqlogstt(buffer, MESSAGE_BUFFER_SIZE, 0,
+			       global_sqlca.sqlstate);
+	     if (status > 0) {
+		 hv_store(retval, "State", 5,
+			  newSVpv(buffer, status), FALSE);
+	     }
+#ifdef DB2BACKUP_MPP
+	     if (mpp_output) {
+		 int  counter;
+		 AV  *part_retval;
+
+		 part_retval = newAV();
+		 hv_store(retval, "NodeInfo", 8,
+			  newRV_noinc((SV*)part_retval), FALSE);
+		 for (counter = 0;
+		      counter < backup_info.iNumMPPOutputStructs;
+		      counter++) {
+		     HV                       *node_elem;
+		     db2BackupMPPOutputStruct *ni;
+
+		     /*
+		      * We may have more elements than results;
+		      * leave if we find an empty element.  Note
+		      * we configure the first node like this
+		      * before calling db2Backup, so we can handle
+		      * the case where the call fails entirely.
+		      */
+		     ni = mpp_output + counter;
+		     if (ni->nodeNumber == (db2NodeType)-1 &&
+			 ni->backupSize == 0 &&
+			 ni->sqlca.sqlcode == 0)
+			 break;
+
+		     node_elem = newHV();
+		     hv_store(node_elem, "NodeNum", 7,
+			      newSVuv(ni->nodeNumber), FALSE);
+		     hv_store(node_elem, "BackupSize", 10,
+			      newSVuv(ni->backupSize), FALSE);
+		     hv_store(node_elem, "SQLCode", 7,
+			      newSViv(ni->sqlca.sqlcode), FALSE);
+		     status = sqlaintp(buffer, MESSAGE_BUFFER_SIZE, 0,
+				       &ni->sqlca);
+		     if (status > 0) {
+			 hv_store(node_elem, "Message", 7,
+				  newSVpv(buffer, status), FALSE);
+		     }
+		     status = sqlogstt(buffer, MESSAGE_BUFFER_SIZE, 0,
+				       ni->sqlca.sqlstate);
+		     if (status > 0) {
+			 hv_store(node_elem, "State", 5,
+				  newSVpv(buffer, status), FALSE);
+		     }
+		     av_push(part_retval, newRV_noinc((SV*)node_elem));
+		 } /* End: for each node */
+
+		 Safefree(mpp_output);
+		 Safefree(node_list);
+	     } /* End: if have node output */
+#endif /* DB2BACKUP_MPP */
+
+	     /* Push both return values. */
+	     Return = newRV_noinc((SV*)retval);
+	     XPUSHs(Return);
+	 }
+#else
+	 croak("db2Backup only supported on DB2 V8.2 and up");
+#endif
+     }
 
 
 #

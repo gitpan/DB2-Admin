@@ -1,7 +1,7 @@
 #
 # MakeMaker file for the DB2 Administrative API
 #
-# $Id: Makefile.PL,v 145.1 2007/10/17 14:28:21 biersma Exp $
+# $Id: Makefile.PL,v 160.2 2008/05/28 18:31:44 biersma Exp $
 #
 
 use Config;
@@ -19,39 +19,83 @@ my $db2_version = $ENV{DB2_VERSION} || do {
     exit(0);
 };
 
-my ($db2_path, $db2_version_enum, @defines, %extra_args);
+my ($db2_version_enum, @defines, %extra_args);
 
 #
-# Determine path and version enum
+# Determine version enum
 #
 if ($db2_version =~ /^V7\./) {
-    $db2_path = "/opt/IBMdb2/V7.1";
     $db2_version_enum = 'db2Version710';
 } elsif ($db2_version =~ /^V8\./) {
-    $db2_path = "/opt/IBM/db2/V8.1";
     $db2_version_enum = 'db2Version810';
 } elsif ($db2_version =~ /^V9\.1/) {
-    if ($^O eq 'linux') {
-	$db2_path = "/opt/ibm/db2/V9.1";
-    } elsif ($^O eq 'solaris') {
-	$db2_path = "/opt/IBM/db2/V9.1";
-    } else {
-	die "unexpected V9.1 platform '$^O'";
-    }
     $db2_version_enum = 'db2Version900';
 } elsif ($db2_version =~ /^V9\.5/) {
-    if ($^O eq 'linux') {
-	$db2_path = "/opt/ibm/db2/V9.5";
-    } elsif ($^O eq 'solaris') {
-	$db2_path = "/opt/IBM/db2/V9.5";
-    } else {
-	die "unexpected V9.5 platform '$^O'";
-    }
     $db2_version_enum = 'db2Version950';
 } else {
     die "Unsupported DB2 version '$db2_version'\n";
 }
 push @defines, "-DDB2_VERSION_ENUM=$db2_version_enum";
+
+#
+# Determine path.  We look at the following environment variables:
+# - DB2DIR
+# - DB2_HOME
+# After that, we fall back to platform defaults (guesses)
+#
+# All this can be overridden by DB2_PREFIX for Morgan Stanley hacks,
+# see below.
+#
+my $db2_path;
+foreach my $env_var (qw(DB2DIR DB2_HOME)) {
+    next unless (defined $ENV{$env_var} && -d $ENV{$env_var});
+    print "Using \$$env_var to set DB2 location\n";
+    $db2_path = $ENV{$env_var};
+    last;
+}
+unless (defined $db2_path) {
+    if ($db2_version =~ /^V7\./) {
+	$db2_path = "/opt/IBMdb2/V7.1";
+    } elsif ($db2_version =~ /^V8\./) {
+	if ($^O eq 'linux' || $^O eq 'solaris') {
+	    $db2_path = "/opt/IBM/db2/V8.1";
+	} elsif ($^O eq 'aix') {
+	    $db2_path = "/usr/opt/db2_08_01";
+	}  else {
+	    die "unexpected V8.2 platform '$^O'";
+	}
+    } elsif ($db2_version =~ /^V9\.1/) {
+	if ($^O eq 'linux') {
+	    $db2_path = "/opt/ibm/db2/V9.1";
+	} elsif ($^O eq 'solaris') {
+	    $db2_path = "/opt/IBM/db2/V9.1";
+	} elsif ($^O eq 'aix') {
+	    $db2_path = "/usr/opt/db2_09_01";
+	} elsif ($^O eq 'MSWin32' || $^O eq 'MSWin64') {
+	    $db2_path = "C:\\ibm\\sqllib";
+	} elsif ($^O eq 'cygwin') {
+	    $db2_path = "/cygdrive/c/ibm/sqllib";
+	} else {
+	    die "unexpected V9.1 platform '$^O'";
+	}
+    } elsif ($db2_version =~ /^V9\.5/) {
+	if ($^O eq 'linux') {
+	    $db2_path = "/opt/ibm/db2/V9.5";
+	} elsif ($^O eq 'solaris') {
+	    $db2_path = "/opt/IBM/db2/V9.5";
+	} elsif ($^O eq 'aix') {
+	    $db2_path = "/usr/opt/db2_09_05";
+	} elsif ($^O eq 'MSWin32' || $^O eq 'MSWin64') {
+	    $db2_path = "C:\\ibm\\sqllib";
+	} elsif ($^O eq 'cygwin') {
+	    $db2_path = "/cygdrive/c/ibm/sqllib";
+	} else {
+	    die "unexpected V9.5 platform '$^O'";
+	}
+    } else {
+	die "Unsupported DB2 version '$db2_version'\n";
+    }
+}
 
 #
 # This deals with a Morgan Stanley specific setup, where we install
@@ -71,7 +115,7 @@ if ($ENV{DB2_PREFIX}) {
     # FIXME: we may also need this for 32-bit, and we will
     # need to change this for 64-bit versions of perl.
     #
-    # FIXME: We really should do this base don the DB2 release and the
+    # FIXME: We really should do this based on the DB2 release and the
     # bitness of perl.
     #
     my $lib_pf = 'lib';
@@ -107,6 +151,7 @@ if ($ENV{DB2_PREFIX}) {
 # manager configuration calls and db2Runstats.
 #
 if ($db2_version ge 'V8.1') {
+    push @defines, "-DADMIN_API_HAVE_DB2BACKUP";
     push @defines, "-DADMIN_API_HAVE_DB2CFG";
     push @defines, "-DADMIN_API_HAVE_DB2RUNSTATS";
 }
@@ -150,13 +195,34 @@ if ($db2_version ge 'V9.5') {
     push @defines, "-DADMIN_API_HAVE_LOAD_XML";
 }
 
+#
+# Platform/bit-ness issues:
+# - On Unix, link to libdb2.so; on Windows, link to db2api and db2api.
+# - Use one of lib64/lib32/lib
+#
+my $libs = "-L$db2_path/lib -ldb2";  # Default
+if ($^O eq 'MSWin32') {  # 32-bit Windows
+    $libs = "-L\"$db2_path\\lib\" -ldb2cli -ldb2api";
+} elsif ($^O eq 'MSWin64') {	# 64-bit Windows
+    $libs = "-L\"$db2_path\\lib64\" -ldb2cli -ldb2api";
+} elsif ($^O eq 'cygwin') {
+    my $libdir = ($Config{use64bitall}) ? 'lib64' : 'lib32';
+    $libs = "-L$db2_path/$libdir -ldb2cli -ldb2api";
+} else {			# Unix
+    my $libdir = ($Config{use64bitall}) ? 'lib64' : 'lib32';
+    if (-d "$db2_path/$libdir") {
+	$libs = "-L$db2_path/$libdir -ldb2";
+    }
+}
+#print "XXX: have libs '$libs'\n";
+
 WriteMakefile('NAME'         => 'DB2::Admin',
 	      'VERSION_FROM' => 'lib/DB2/Admin.pm',
 	      'PREREQ_PM'    => { 'Params::Validate' => '0.87',
 				  'Test::Simple'     => '0.62',
 				},
 	      'INC'          => "-I$db2_path/include",
-	      'LIBS'         => "-L$db2_path/lib -ldb2",
+	      'LIBS'         => $libs,
 	      'DEFINE'       => "@defines",
 	      %extra_args,
 	     );

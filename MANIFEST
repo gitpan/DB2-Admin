@@ -42,6 +42,7 @@ t/61import.t
 t/62load.t
 t/63history.t
 t/64loadquery.t
+t/70backup.t
 t/99pod.t
 typemap
 util/check_config_params.pl

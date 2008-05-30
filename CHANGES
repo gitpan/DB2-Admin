@@ -1,3 +1,8 @@
+=head1 Changes in the 3.0 release
+
+Add support for the Backup command, including support for DPF backups
+(with included logs) in DB2 V9.5.
+
 =head1 Changes in the 2.9 release
 
 =head2 Fix core dump in load from cursor

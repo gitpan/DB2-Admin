@@ -1,7 +1,7 @@
 #
 # Test 'list utilities' function (which uses the snapshot API)
 #
-# $Id: 31listutil.t,v 150.1 2007/12/12 19:29:21 biersma Exp $
+# $Id: 31listutil.t,v 160.1 2008/05/29 19:12:31 biersma Exp $
 #
 
 use strict;
@@ -14,13 +14,8 @@ ok(1, "SetOptions");
 my $retval = DB2::Admin->Attach();
 ok($retval, "Attach");
 
-SKIP: {
-    my $version = substr($ENV{DB2_VERSION}, 1); # Vx.y -> x.y
-    skip("db2Load not available in DB2 version < 8.1", 1) if ($version < 8);
-
-    my @utils = DB2::Admin->ListUtilities();
-    ok(1, "List Utilities");
-}
+my @utils = DB2::Admin->ListUtilities();
+ok(1, "List Utilities");
 
 $retval = DB2::Admin->Detach();
 ok($retval, "Detach");

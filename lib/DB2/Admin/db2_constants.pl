@@ -10451,12 +10451,10 @@ $constant_info = {
         'Value' => '5',
     },
     'SQLM_UTILITY_INVOKER_AUTO' => {
-        'Category' => 'UtilityType',
         'Type' => 'Number',
         'Value' => '1',
     },
     'SQLM_UTILITY_INVOKER_USER' => {
-        'Category' => 'UtilityType',
         'Type' => 'Number',
         'Value' => '0',
     },
@@ -10506,17 +10504,14 @@ $constant_info = {
         'Value' => '2',
     },
     'SQLM_UTILITY_STATE_ERROR' => {
-        'Category' => 'UtilityType',
         'Type' => 'Number',
         'Value' => '2',
     },
     'SQLM_UTILITY_STATE_EXECUTE' => {
-        'Category' => 'UtilityType',
         'Type' => 'Number',
         'Value' => '0',
     },
     'SQLM_UTILITY_STATE_WAIT' => {
-        'Category' => 'UtilityType',
         'Type' => 'Number',
         'Value' => '1',
     },
@@ -16780,8 +16775,8 @@ $constant_index = {
         '59' => 'SQLM_TYPE_HANDLE',
     },
     'UtilityType' => {
-        '0' => 'SQLM_UTILITY_INVOKER_USER',
-        '1' => 'SQLM_UTILITY_STATE_WAIT',
+        '0' => 'SQLM_UTILITY_REBALANCE',
+        '1' => 'SQLM_UTILITY_BACKUP',
         '2' => 'SQLM_UTILITY_RUNSTATS',
         '3' => 'SQLM_UTILITY_REORG',
         '4' => 'SQLM_UTILITY_RESTORE',
