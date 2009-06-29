@@ -1,7 +1,7 @@
 #
 # Test the database / node / DCS directory functions
 #
-# $Id: 45dir.t,v 145.1 2007/10/17 14:43:22 biersma Exp $
+# $Id: 45dir.t,v 165.1 2009/02/24 14:49:07 biersma Exp $
 #
 
 use strict;
@@ -11,25 +11,25 @@ BEGIN { use_ok('DB2::Admin'); }
 $| = 1;
 
 my %fake_db = ('Alias'          => 'NOSUCHDB',
-	       'DBType'         => 'Remote',
-	       'Database'       => 'SAMPLE',
-	       'NodeName'       => 'NOSUCHND',
-	       'Comment'        => 'No such database',
-	       'Authentication' => 'Server',
-	      );
+               'DBType'         => 'Remote',
+               'Database'       => 'SAMPLE',
+               'NodeName'       => 'NOSUCHND',
+               'Comment'        => 'No such database',
+               'Authentication' => 'Server',
+              );
 my %fake_node = ('NodeName'    => 'NOSUCHND',
-		 'HostName'    => 'Bogus',
-		 'ServiceName' => '3700',
-		 'Comment'     => 'No such node',
-		 'Protocol'    => 'TCP/IP',
-		);
+                 'HostName'    => 'Bogus',
+                 'ServiceName' => '3700',
+                 'Comment'     => 'No such node',
+                 'Protocol'    => 'TCP/IP',
+                );
 my %fake_dcs = ('Database'    => 'NOSUCHDB',
-		'Target'      => 'NONESUCH',
-		'Comment'     => 'No such DCS database',
-	       );
+                'Target'      => 'NONESUCH',
+                'Comment'     => 'No such DCS database',
+               );
 
 my $rc = DB2::Admin->SetOptions('RaiseError' => 1,
-			    'PrintError' => 0);
+                            'PrintError' => 0);
 ok ($rc, "SetOptions");
 
 #
@@ -65,18 +65,21 @@ SKIP: {
 
 #
 # Get node directory
-# SQL code -1027: node directory empty
+# SQL code -1027: no node directory exists
+# SQL code -1037: node directory empty
 #
 my @node_dir = DB2::Admin::->GetNodeDirectory();
-ok ((scalar(@node_dir) || DB2::Admin::sqlcode() == -1027), "GetNodeDirectory");
+ok ((scalar(@node_dir) ||
+     DB2::Admin::sqlcode() == -1037 ||
+     DB2::Admin::sqlcode() == -1027), "GetNodeDirectory");
 
 #
 # Get DCS directory
-# SQL code 1311/1312: DCS directory empty
+# SQL code 1311/1312: DCS directory empty / not exists
 #
 my @dcs_dir = eval { DB2::Admin::->GetDCSDirectory() };
-ok ((scalar(@dcs_dir) || 
-     DB2::Admin::sqlcode() == 1311 || 
+ok ((scalar(@dcs_dir) ||
+     DB2::Admin::sqlcode() == 1311 ||
      DB2::Admin::sqlcode() == 1312), "GetDCSDirectory");
 
 
@@ -96,8 +99,8 @@ foreach my $entry (@node_dir) {
     next unless ($entry->{NodeName} eq $fake_node{NodeName});
     $rc = 1;
     foreach my $key (keys %fake_node) {
-	next if ($entry->{$key} eq $fake_node{$key});
-	warn "Node catalog entry '$key' differs: set '$fake_db{$key}', read '$entry->{$key}'";
+        next if ($entry->{$key} eq $fake_node{$key});
+        warn "Node catalog entry '$key' differs: set '$fake_db{$key}', read '$entry->{$key}'";
        $rc = 0;
     }
     last;
@@ -120,9 +123,9 @@ foreach my $entry (@db_dir) {
     next unless ($entry->{Alias} eq $fake_db{Alias});
     $rc = 1;
     foreach my $key (keys %fake_db) {
-	next if ($entry->{$key} eq $fake_db{$key});
-	warn "Database catalog entry '$key' differs: set '$fake_db{$key}', read '$entry->{$key}'";
-	$rc = 0;
+        next if ($entry->{$key} eq $fake_db{$key});
+        warn "Database catalog entry '$key' differs: set '$fake_db{$key}', read '$entry->{$key}'";
+        $rc = 0;
     }
     last;
 }
@@ -144,9 +147,9 @@ foreach my $entry (@dcs_dir) {
     next unless ($entry->{Database} eq $fake_dcs{Database});
     $rc = 1;
     foreach my $key (keys %fake_dcs) {
-	next if ($entry->{$key} eq $fake_dcs{$key});
-	warn "DCS catalog entry '$key' differs: set '$fake_db{$key}', read '$entry->{$key}'";
-	$rc = 0;
+        next if ($entry->{$key} eq $fake_dcs{$key});
+        warn "DCS catalog entry '$key' differs: set '$fake_db{$key}', read '$entry->{$key}'";
+        $rc = 0;
     }
     last;
 }

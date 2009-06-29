@@ -2,7 +2,7 @@
 # db2_config_params - Data on database manager and database
 #                     configuration parameters.
 #
-# Copyright (c) 2007, Morgan Stanley & Co. Incorporated
+# Copyright (c) 2007-2009, Morgan Stanley & Co. Incorporated
 # See ..../COPYING for terms of distribution.
 #
 # This library is free software; you can redistribute it and/or
@@ -40,7 +40,7 @@
 # THIS OR ANOTHER EQUIVALENT DISCLAIMER AS WELL AS ANY OTHER LICENSE
 # TERMS THAT MAY APPLY.
 #
-# $Id: db2_config_params.pl,v 145.3 2007/11/20 21:54:14 biersma Exp $
+# $Id: db2_config_params.pl,v 165.3 2009/03/03 18:31:34 biersma Exp $
 #
 
 #
@@ -80,6 +80,12 @@ $config_params = {
         'Name'      => 'alt_collate',
         'Updatable' => 1,
         'Domain'    => 'Database',
+    },
+    'SQLF_KTN_ALTERNATE_AUTH_ENC' => { # New with V9.7
+        'Type'      => 'u16bit',
+        'Name'      => 'alternate_auth_enc',
+        'Updatable' => 1,
+        'Domain'    => 'Manager',
     },
     'SQLF_DBTN_APP_CTL_HEAP_SZ' => {
         'Name'      => 'app_ctl_heap_sz',
@@ -132,6 +138,12 @@ $config_params = {
     'SQLF_DBTN_AUTO_DEL_REC_OBJ' => { # New with V9.5
         'Type'      => 'u16bit',
         'Name'      => 'auto_del_rec_obj',
+        'Updatable' => 1,
+        'Domain'    => 'Database',
+    },
+    'SQLF_DBTN_AUTO_REVAL' => { # New with V9.7
+        'Type'      => 'u16bit',
+        'Name'      => 'auto_revalidation',
         'Updatable' => 1,
         'Domain'    => 'Database',
     },
@@ -215,6 +227,13 @@ $config_params = {
         'Name'      => 'clnt_pw_plugin',
         'Domain'    => 'Manager',
     },
+    'SQLF_KTN_CLUSTER_MGR' => {	# New with V9.7
+        'Type'      => 'string',
+	'Length'    => 262,
+        'Updatable' => 0,
+        'Name'      => 'cluster_mgr',
+        'Domain'    => 'Manager',
+    },
     'SQLF_DBTN_CODEPAGE' => {
         'Type'      => 'u16bit',
         'Domain'    => 'Database',
@@ -271,6 +290,12 @@ $config_params = {
         'Updatable' => 1,
         'Domain'    => 'Manager',
     },
+    'SQLF_DBTN_CUR_COMMIT' => {	# New with V9.7
+        'Type'      => 'u32bit',
+        'Name'      => 'cur_commit',
+        'Updatable' => 0,
+        'Domain'    => 'Database',
+    },
     'SQLF_DBTN_DATABASE_LEVEL' => {
         'Type'      => 'u16bit',
         'Domain'    => 'Database',
@@ -288,6 +313,12 @@ $config_params = {
         'Name'      => 'datalinks',
         'Updatable' => 1,
         'Domain'    => 'Manager',
+    },
+    'SQLF_DBTN_DATE_COMPAT' => { # New with V9.7
+        'Type'      => 'u16bit',
+        'Domain'    => 'Database',
+        'Updatable' => 0,
+        'Name'      => 'date_compat',
     },
     'SQLF_DBTN_DB_COLLNAME' => {
         'Type'      => 'string',
@@ -312,6 +343,12 @@ $config_params = {
         'Type'      => 'u16bit',
         'Name'      => 'decflt_rounding',
         'Updatable' => 1,
+        'Domain'    => 'Database',
+    },
+    'SQLF_DBTN_DEC_TO_CHAR_FMT' => {  # New with V9.7
+        'Type'      => 'u16bit',
+        'Updatable' => 1,
+        'Name'      => 'dec_to_char_fmt',
         'Domain'    => 'Database',
     },
     'SQLF_KTN_DFT_ACCOUNT_STR' => {
@@ -393,6 +430,12 @@ $config_params = {
         'Type'      => 'string',
         'Length'    => 215,
         'Name'      => 'diagpath',
+        'Updatable' => 1,
+        'Domain'    => 'Manager',
+    },
+    'SQLF_KTN_DIAGSIZE' => {	# New with V9.7
+        'Type'      => 'u64bit',
+        'Name'      => 'diagsize',
         'Updatable' => 1,
         'Domain'    => 'Manager',
     },
@@ -883,11 +926,59 @@ $config_params = {
         'Name'      => 'mirrorlogpath',
         'Domain'    => 'Database',
     },
+    'SQLF_DBTN_MON_ACT_METRICS' => { # New with V9.7
+        'Type'      => 'u16bit',
+        'Updatable' => 1,
+        'Name'      => 'mon_act_metrics',
+        'Domain'    => 'Database',
+    },
+    'SQLF_DBTN_MON_DEADLOCK' => { # New with V9.7
+        'Type'      => 'u16bit',
+        'Updatable' => 1,
+        'Name'      => 'mon_deadlock',
+        'Domain'    => 'Database',
+    },
     'SQLF_KTN_MON_HEAP_SZ' => {
         'Type'      => 'u16bit',
         'Updatable' => 1,
         'Name'      => 'mon_heap_sz',
         'Domain'    => 'Manager',
+    },
+    'SQLF_DBTN_MON_LOCKTIMEOUT' => { # New with V9.7
+        'Type'      => 'u16bit',
+        'Updatable' => 1,
+        'Name'      => 'mon_locktimeout',
+        'Domain'    => 'Database',
+    },
+    'SQLF_DBTN_MON_LOCKWAIT' => { # New with V9.7
+        'Type'      => 'u16bit',
+        'Updatable' => 1,
+        'Name'      => 'mon_lockwait',
+        'Domain'    => 'Database',
+    },
+    'SQLF_DBTN_MON_LW_THRESH' => { # New with V9.7
+        'Type'      => 'u16bit',
+        'Updatable' => 1,
+        'Name'      => 'mon_lw_thresh',
+        'Domain'    => 'Database',
+    },
+    'SQLF_DBTN_MON_OBJ_METRICS' => { # New with V9.7
+        'Type'      => 'u16bit',
+        'Updatable' => 1,
+        'Name'      => 'mon_obj_metrics',
+        'Domain'    => 'Database',
+    },
+    'SQLF_DBTN_MON_REQ_METRICS' => { # New with V9.7
+        'Type'      => 'u16bit',
+        'Updatable' => 1,
+        'Name'      => 'mon_req_metrics',
+        'Domain'    => 'Database',
+    },
+    'SQLF_DBTN_MON_UOW_DATA' => { # New with V9.7
+        'Type'      => 'u16bit',
+        'Updatable' => 1,
+        'Name'      => 'mon_uow_data',
+        'Domain'    => 'Database',
     },
     'SQLF_DBTN_MULTIPAGE_ALLOC' => {
         'Type'      => 'u16bit',
@@ -1115,6 +1206,13 @@ $config_params = {
         'Name'      => 'sheapthres_shr',
         'Domain'    => 'Database',
     },
+    'SQLF_DBTN_SMTP_SERVER' => { # New with V9.7
+        'Type'      => 'string',
+	'Length'    => 255,
+        'Updatable' => 1,
+        'Name'      => 'smtp_server',
+        'Domain'    => 'Database',
+    },
     'SQLF_DBTN_SOFTMAX' => {
         'Type'      => 'u16bit',
         'Updatable' => 1,
@@ -1153,6 +1251,62 @@ $config_params = {
         'Name'      => 'spm_name',
         'Domain'    => 'Manager',
     },
+    'SQLF_KTN_SSL_CIPHERSPECS' => { # New with V9.7
+        'Type'      => 'string',
+	'Length'    => 255,
+        'Updatable' => 1,
+        'Name'      => 'ssl_cipherspecs',
+        'Domain'    => 'Manager',
+    },
+    'SQLF_KTN_SSL_CLNT_KEYDB' => { # New with V9.7
+        'Type'      => 'string',
+	'Length'    => 1023,
+        'Updatable' => 1,
+        'Name'      => 'ssl_clnt_keydb',
+        'Domain'    => 'Manager',
+    },
+    'SQLF_KTN_SSL_CLNT_STASH' => { # New with V9.7
+        'Type'      => 'string',
+	'Length'    => 1023,
+        'Updatable' => 1,
+        'Name'      => 'ssl_clnt_stash',
+        'Domain'    => 'Manager',
+    },
+    'SQLF_KTN_SSL_SVCENAME' => { # New with V9.7
+        'Type'      => 'string',
+	'Length'    => 14,
+        'Updatable' => 1,
+        'Name'      => 'ssl_svcename',
+        'Domain'    => 'Manager',
+    },
+    'SQLF_KTN_SSL_SVR_KEYDB' => { # New with V9.7
+        'Type'      => 'string',
+	'Length'    => 1023,
+        'Updatable' => 1,
+        'Name'      => 'ssl_svr_keydb',
+        'Domain'    => 'Manager',
+    },
+    'SQLF_KTN_SSL_SVR_LABEL' => { # New with V9.7
+        'Type'      => 'string',
+	'Length'    => 1023,
+        'Updatable' => 1,
+        'Name'      => 'ssl_svr_label',
+        'Domain'    => 'Manager',
+    },
+    'SQLF_KTN_SSL_SVR_STASH' => { # New with V9.7
+        'Type'      => 'string',
+	'Length'    => 1023,
+        'Updatable' => 1,
+        'Name'      => 'ssl_svr_stash',
+        'Domain'    => 'Manager',
+    },
+    'SQLF_KTN_SSL_SVR_VERSIONS' => { # New with V9.7
+        'Type'      => 'string',
+	'Length'    => 255,
+        'Updatable' => 1,
+        'Name'      => 'ssl_versions',
+        'Domain'    => 'Manager',
+    },
     'SQLF_KTN_START_STOP_TIME' => {
         'Type'      => 'u16bit',
         'Updatable' => 1,
@@ -1165,14 +1319,20 @@ $config_params = {
         'Name'      => 'stat_heap_sz',
         'Domain'    => 'Database',
     },
-    'SQLF_DBTN_STMTHEAP' => {
-        'Type'      => 'u16bit',
+    'SQLF_DBTN_STMT_CONC' => { 	# New with V9.7
+        'Type'      => 'u32bit',
         'Updatable' => 1,
-        'Name'      => 'stmtheap',
+        'Name'      => 'stmt_conc',
         'Domain'    => 'Database',
     },
     'SQLF_DBTN_STMT_HEAP' => {
         'Type'      => 'u32bit',
+        'Updatable' => 1,
+        'Name'      => 'stmtheap',
+        'Domain'    => 'Database',
+    },
+    'SQLF_DBTN_STMTHEAP' => {
+        'Type'      => 'u16bit',
         'Updatable' => 1,
         'Name'      => 'stmtheap',
         'Domain'    => 'Database',

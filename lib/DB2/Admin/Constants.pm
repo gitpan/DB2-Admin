@@ -1,7 +1,7 @@
 #
 # DB2::Admin::Constants - provide access to DB2 constants
 #
-# Copyright (c) 2007, Morgan Stanley & Co. Incorporated
+# Copyright (c) 2007,2009, Morgan Stanley & Co. Incorporated
 # See ..../COPYING for terms of distribution.
 #
 # This library is free software; you can redistribute it and/or
@@ -39,7 +39,7 @@
 # THIS OR ANOTHER EQUIVALENT DISCLAIMER AS WELL AS ANY OTHER LICENSE
 # TERMS THAT MAY APPLY.
 #
-# $Id: Constants.pm,v 145.2 2007/11/20 21:53:23 biersma Exp $
+# $Id: Constants.pm,v 165.1 2009/01/22 17:54:09 biersma Exp $
 #
 
 package DB2::Admin::Constants;
@@ -122,12 +122,12 @@ sub Lookup {
 # Returns:
 # - Ref to hash with information
 #
-my $domain_to_config;		# Domain -> Name -> Info
+my $domain_to_config;           # Domain -> Name -> Info
 sub GetConfigParam {
     my $class = shift;
     my %params = validate(@_, { 'Name'   => 1,
-				'Domain' => 1,
-			      });
+                                'Domain' => 1,
+                              });
     my ($name, $domain) = @params{qw(Name Domain)};
     $name = lc $name;
 
@@ -135,65 +135,65 @@ sub GetConfigParam {
     # Prime look-up hash
     #
     unless (defined $domain_to_config) {
-	while (my ($constant, $info) = each %$config_params) {
-	    my $cur_name = lc($info->{'Name'});
-	    my $domains = $info->{'Domain'};
-	    $domains = [ $domains ] unless (ref $domains);
-	    my $entry = { %$info };
-	    $entry->{'Constant'} = $constant;
-	    foreach my $domain (@$domains) {
-		if (defined $domain_to_config->{$domain}{$cur_name}) {
-		    #
-		    # There are cases where the same parameter name
-		    # maps to different constants - typically if the
-		    # size/type has changed.  The old one is obsolete,
-		    # pick the new one.
-		    #
-		    # We can only truly solve this with additional
-		    # meta-data, but there' a hack that should work:
-		    # look up the constants and, of those defined,
-		    # pick the one with the highest number.  If we run
-		    # on e.g. DB2 V7.x or V8.1, a constant new to V8.2
-		    # is not yet known, so we will skip it.
- 		    #
-		    # Example: stmtheap (SQLF_DBTN_STMTHEAP /
-		    # SQLF_DBTN_STMT_HEAP)
-		    #
-		    my $match_entry;
-		    foreach my $try ($entry, $domain_to_config->{$domain}{$cur_name}) {
-			my $name = $try->{Constant};
-			my $info = $constant_info->{$name};
-			unless (defined $info) {
-			    #print STDERR "XXX: Skipping undefined constant '$name' in duplicate-defined config param '$cur_name'\n";
-			    next;
-			}
-			unless (defined $match_entry) {
-			    $match_entry = $try;
-			    next;
-			}
-			my $try_value = $info->{Value};
-			my $match_value = $constant_info->{ $match_entry->{Constant} }->{Value};
-			if ($try_value > $match_value) {
-			    #print STDERR "XXX: Pick [$name] ($try_value) over [$match_entry->{Constant}] ($match_value)\n";
-			    $match_entry = $try;
-			} else {
-			    #print STDERR "XXX: Pick [$match_entry->{Constant}] ($match_value) over [$name] ($try_value)\n";
-			}
-		    }
-		    confess "Huh? No match at all"
-		      unless (defined $match_entry);
-		    $entry = $match_entry;
+        while (my ($constant, $info) = each %$config_params) {
+            my $cur_name = lc($info->{'Name'});
+            my $domains = $info->{'Domain'};
+            $domains = [ $domains ] unless (ref $domains);
+            my $entry = { %$info };
+            $entry->{'Constant'} = $constant;
+            foreach my $domain (@$domains) {
+                if (defined $domain_to_config->{$domain}{$cur_name}) {
+                    #
+                    # There are cases where the same parameter name
+                    # maps to different constants - typically if the
+                    # size/type has changed.  The old one is obsolete,
+                    # pick the new one.
+                    #
+                    # We can only truly solve this with additional
+                    # meta-data, but there' a hack that should work:
+                    # look up the constants and, of those defined,
+                    # pick the one with the highest number.  If we run
+                    # on e.g. DB2 V7.x or V8.1, a constant new to V8.2
+                    # is not yet known, so we will skip it.
+                    #
+                    # Example: stmtheap (SQLF_DBTN_STMTHEAP /
+                    # SQLF_DBTN_STMT_HEAP)
+                    #
+                    my $match_entry;
+                    foreach my $try ($entry, $domain_to_config->{$domain}{$cur_name}) {
+                        my $name = $try->{Constant};
+                        my $info = $constant_info->{$name};
+                        unless (defined $info) {
+                            #print STDERR "XXX: Skipping undefined constant '$name' in duplicate-defined config param '$cur_name'\n";
+                            next;
+                        }
+                        unless (defined $match_entry) {
+                            $match_entry = $try;
+                            next;
+                        }
+                        my $try_value = $info->{Value};
+                        my $match_value = $constant_info->{ $match_entry->{Constant} }->{Value};
+                        if ($try_value > $match_value) {
+                            #print STDERR "XXX: Pick [$name] ($try_value) over [$match_entry->{Constant}] ($match_value)\n";
+                            $match_entry = $try;
+                        } else {
+                            #print STDERR "XXX: Pick [$match_entry->{Constant}] ($match_value) over [$name] ($try_value)\n";
+                        }
+                    }
+                    confess "Huh? No match at all"
+                      unless (defined $match_entry);
+                    $entry = $match_entry;
 
-		    #print STDERR "WARNING: duplicate config param '$domain' '$cur_name' for constants '$domain_to_config->{$domain}{$cur_name}{Constant}' and '$constant'\n";
-		}
-		$domain_to_config->{$domain}{$cur_name} = $entry;
-	    }
-	}
+                    #print STDERR "WARNING: duplicate config param '$domain' '$cur_name' for constants '$domain_to_config->{$domain}{$cur_name}{Constant}' and '$constant'\n";
+                }
+                $domain_to_config->{$domain}{$cur_name} = $entry;
+            }
+        }
     }
 
     confess "Invalid domain '$domain' (expect " .
       join('/', sort keys %$domain_to_config) . ")"
-	unless (defined $domain_to_config->{$domain});
+        unless (defined $domain_to_config->{$domain});
     my $info = $domain_to_config->{$domain}{$name};
     warn "WARNING: unknown name '$domain' '$name'"
       unless (defined $info);
@@ -202,7 +202,7 @@ sub GetConfigParam {
 }
 
 
-1;				# End on a positive note
+1;                              # End on a positive note
 
 
 __END__
@@ -232,11 +232,12 @@ DB2::Admin::Constants - Support for DB2 constants from "sqlmon.h" and "sqlutil.h
   my $name = DB2::Admin::Constants::->Lookup('Platform', 3);
 
   #
-  # Lookup information on a database / database manager
-  # configuration parameter
+  # Lookup information on a database / database manager configuration
+  # parameter. (Use GetDbConfig or GetDbmConfig in DB2::Admin to look
+  # up the actual config params.)
   #
-  my $info = DB2::Admin::Constants::->LookupConfigParam('Name'   => 'maxagents',
-                                                    'Domain' => 'Manager');
+  my $info = DB2::Admin::Constants::->GetConfigParam('Name'   => 'maxagents',
+                                                     'Domain' => 'Manager');
 
 =head1 DESCRIPTION
 

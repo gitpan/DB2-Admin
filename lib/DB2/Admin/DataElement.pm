@@ -3,7 +3,7 @@
 #                           data stream used for snapshot, monitor
 #                           switches, and events
 #
-# Copyright (c) 2007, Morgan Stanley & Co. Incorporated
+# Copyright (c) 2007-2009, Morgan Stanley & Co. Incorporated
 # See ..../COPYING for terms of distribution.
 #
 # This library is free software; you can redistribute it and/or
@@ -41,14 +41,14 @@
 # THIS OR ANOTHER EQUIVALENT DISCLAIMER AS WELL AS ANY OTHER LICENSE
 # TERMS THAT MAY APPLY.
 #
-# $Id: DataElement.pm,v 145.2 2007/11/20 21:53:34 biersma Exp $
+# $Id: DataElement.pm,v 165.1 2009/02/05 14:46:02 biersma Exp $
 #
 
 package DB2::Admin::DataElement;
 
 use strict;
 use Carp;
-use Config;			# For byte-order
+use Config;                     # For byte-order
 
 use DB2::Admin::Constants;
 
@@ -70,10 +70,10 @@ sub new {
 
     my $name = $DB2::Admin::Constants::constant_index->{'Element'}{$element};
     if (defined $name) {
-	$name =~ s/^SQLM_ELM_// ||
-	  confess "Cannot remove prefix from element name [$name]";
+        $name =~ s/^SQLM_ELM_// ||
+          confess "Cannot remove prefix from element name [$name]";
     } else {
-	$name = $element;
+        $name = $element;
     }
 
     return bless { 'Name'    => $name,
@@ -129,7 +129,7 @@ BEGIN {
                      'u16bit' => 'S',
                      '32bit'  => 'l',
                      'u32bit' => 'L',
-		     'float'  => 'f',
+                     'float'  => 'f',
                     );
     if (length($Config{byteorder}) == 8) {
         %decode_table = (%decode_table,
@@ -138,20 +138,20 @@ BEGIN {
                          );
     }
     foreach my $key ('string', 'handle',
-		     'u64bit', '64bit', keys %decode_table) {
-	next if ($key eq 'float'); # Used for config param, not data stream
+                     'u64bit', '64bit', keys %decode_table) {
+        next if ($key eq 'float'); # Used for config param, not data stream
         my $constant = 'SQLM_TYPE_' . uc($key);
 
-	#
-	# The 'handle' type is only available on 8.2.3+, and even then
-	# not on Solaris.  To cater for that, we always eval the
-	# constant lookup (for all types) and ignore any type not
-	# known for the OS / DB2 release.
-	#
-	eval {
-	    my $constant_value = DB2::Admin::Constants::->GetValue($constant);
-	    $type_table{$constant_value} = $key;
-	};
+        #
+        # The 'handle' type is only available on 8.2.3+, and even then
+        # not on Solaris.  To cater for that, we always eval the
+        # constant lookup (for all types) and ignore any type not
+        # known for the OS / DB2 release.
+        #
+        eval {
+            my $constant_value = DB2::Admin::Constants::->GetValue($constant);
+            $type_table{$constant_value} = $key;
+        };
     }
 }
 sub Decode {
@@ -161,12 +161,12 @@ sub Decode {
     if (defined $format) {
         return unpack($format, $binary);
     } elsif ($type eq 'string') {
-	return unpack("Z$size", $binary);
+        return unpack("Z$size", $binary);
     } elsif ($type eq 'u64bit' || $type eq '64bit') {
         #
         # Ouch: we are running 32-bit.  Manually decode 64-bit value.
         #
-	my $byte_order = $Config{byteorder};
+        my $byte_order = $Config{byteorder};
         my ($low, $high);
         if ($type eq 'u64bit') {
             ($low, $high) = unpack("L L", $binary);
@@ -182,12 +182,12 @@ sub Decode {
             return $low;
         }
     } elsif ($type eq 'handle') { # Blob: treat as hex
-	my $retval = '0x';
-	$retval .= sprintf("%02x", ord(substr($binary, $_-1, 1)))
-	  foreach (1..length($binary));
-	return $retval;
+        my $retval = '0x';
+        $retval .= sprintf("%02x", ord(substr($binary, $_-1, 1)))
+          foreach (1..length($binary));
+        return $retval;
     } else {
-	confess "Unexpected type code [$type]";
+        confess "Unexpected type code [$type]";
     }
 }
 
@@ -209,7 +209,7 @@ sub Encode {
     if (defined $format) {
         return pack($format, $value);
     } elsif ($type_name eq 'u64bit' ||
-	     $type_name eq '64bit') {
+             $type_name eq '64bit') {
         #
         # 32-bit:  we only support 32-bit values, pack lower word only.
         #
@@ -227,7 +227,7 @@ sub Encode {
             return pack("L", 0) . $low;
         }
     } else {
-	confess "Unexpected type name [$type_name]";
+        confess "Unexpected type name [$type_name]";
     }
 }
 
@@ -247,158 +247,159 @@ sub _decode {
     #
     my $display = $value;
     if ($this->{'Name'} eq 'APPL_ID' ||
-	$this->{'Name'} eq 'APPL_ID_HOLDING_LK' ||
-	$this->{'Name'} eq 'CORR_TOKEN' ||
-	$this->{'Name'} eq 'ROLLED_BACK_APPL_ID') {
+        $this->{'Name'} eq 'APPL_ID_HOLDING_LK' ||
+        $this->{'Name'} eq 'CORR_TOKEN' ||
+        $this->{'Name'} eq 'ROLLED_BACK_APPL_ID') {
         if ($value !~ /^\*(LOCAL|N\d)/) {
             #
-	    # According to the Viper GA docs, the format
-	    # this can have is:
-	    #
-	    # - APPC: CAIBMTOR.OSFDBX0.930131194520
-	    # - TCP/IP for IPv4: 900E1AA1.47E2.040326210233
-	    # - TCP/IP for IPv6: 1111:2222:3333:4444:5555:6666:
-	    #                    7777:8888.65535.0123456789AB
-	    # - IPX/SPX: C11A8E5C.400011528250.0131214645
-	    # - NetBIOS: *NETBIOS.SBOIVIN.930131214645
-	    # - Local: *LOCAL.DB2INST1.930131235945 or
-	    #          *N2.DB2INST1.0B5A12222841 (DPF)
-	    #
-	    # The docs are incomplete, though.  There's another
-	    # case for TCP/IP v4, for V9.1 clients, where you get:
-	    # - TCP/IP for IPv4: 192.168.1.14.12345.040326210233
-	    #
-	    # We only handle the TCP/IP case (who uses the other
-	    # protocols anymore).
-	    #
-	    # Another detail for TCP/IP v4:
-	    #
-	    # Data like 900E1AA1.47E2.040326210233
+            # According to the Viper GA docs, the format
+            # this can have is:
+            #
+            # - APPC: CAIBMTOR.OSFDBX0.930131194520
+            # - TCP/IP for IPv4: 900E1AA1.47E2.040326210233
+            # - TCP/IP for IPv6: 1111:2222:3333:4444:5555:6666:
+            #                    7777:8888.65535.0123456789AB
+            # - IPX/SPX: C11A8E5C.400011528250.0131214645
+            # - NetBIOS: *NETBIOS.SBOIVIN.930131214645
+            # - Local: *LOCAL.DB2INST1.930131235945 or
+            #          *N2.DB2INST1.0B5A12222841 (DPF)
+            #
+            # The docs are incomplete, though.  There's another
+            # case for TCP/IP v4, for V9.1 clients, where you get:
+            # - TCP/IP for IPv4: 192.168.1.14.12345.040326210233
+            #
+            # We only handle the TCP/IP case (who uses the other
+            # protocols anymore).
+            #
+            # Another detail for TCP/IP v4:
+            #
+            # Data like 900E1AA1.47E2.040326210233
             # is IP:port:instance
             #
             # If the first letter of IP address or port would be
             # in 0-9, IBM uses G-P instead.  We fix that below.
             #
-	    if ($display =~ /^(\d+\.\d+\.\d+\.\d+)\.(\d+)\.(\d+)$/) {
-		#
-		# New IPV4 format
-		#
-		$display = "$1 port $2 ($3)";
-		#print STDERR "XXX: new-style IP v4 - $display\n";
-	    } elsif ($display =~ /^(\d[\d:]+\d)\.(\d+)\.(\d+)$/) {
-		#
-		# IPv6 format
-		#
-		$display = "$1 port $2 ($3)";
-	    } else {		# Assume old-style IPv4
-		my ($raw_ip, $raw_port, $raw_instance) =
-		  split /\./, $display;
-		#print STDERR "XXX: $this->{Name} display [$display], IP [$raw_ip], port [$raw_port]\n";
-		substr($raw_ip, 0, 1) =~ tr/G-P/0-9/;
-		substr($raw_port, 0, 1) =~ tr/G-P/0-9/;
-		my @ip = map hex(substr($raw_ip, $_ * 2, 2)), (0..3);
-		my @port = map hex(substr($raw_port, $_ * 2, 2)), (0..1);
-		$display = join('.', @ip) . " port ";
-		$display .= ($port[1] << 8) + $port[0];
-		$display .= " ($raw_instance)";
-		#print STDERR "XXX: old-style IP v4 - $display\n";
-	    }			# End if: not new-style IPv4 / IPv6
+            if ($display =~ /^(\d+\.\d+\.\d+\.\d+)\.(\d+)\.(\d+)$/) {
+                #
+                # New IPV4 format
+                #
+                $display = "$1 port $2 ($3)";
+                #print STDERR "XXX: new-style IP v4 - $display\n";
+            } elsif ($display =~ /^(\d[\d:]+\d)\.(\d+)\.(\d+)$/) {
+                #
+                # IPv6 format
+                #
+                $display = "$1 port $2 ($3)";
+            } else {            # Assume old-style IPv4
+                my ($raw_ip, $raw_port, $raw_instance) =
+                  split /\./, $display;
+                #print STDERR "XXX: $this->{Name} display [$display], IP [$raw_ip], port [$raw_port]\n";
+                substr($raw_ip, 0, 1) =~ tr/G-P/0-9/;
+                substr($raw_port, 0, 1) =~ tr/G-P/0-9/;
+                my @ip = map hex(substr($raw_ip, $_ * 2, 2)), (0..3);
+                my @port = map hex(substr($raw_port, $_ * 2, 2)), (0..1);
+                $display = join('.', @ip) . " port ";
+                $display .= ($port[1] << 8) + $port[0];
+                $display .= " ($raw_instance)";
+                #print STDERR "XXX: old-style IP v4 - $display\n";
+            }                   # End if: not new-style IPv4 / IPv6
         }
     } elsif ($this->{'Name'} eq 'APPL_STATUS') {
-	my %status_table = (1  => 'connect pending',
-			    2  => 'connect completed',
-			    3  => 'UOW executing',
-			    4  => 'UOW waiting',
-			    5  => 'lock wait',
-			    6  => 'commit active',
-			    7  => 'rollback active',
-			    8  => 'recompiling plan',
-			    9  => 'compiling SQL stmt',
-			    10 => 'request interrupted',
-			    11 => 'disconnect pending',
-			    12 => 'prepared transaction',
-			    13 => 'heuristically committed',
-			    14 => 'heuristically rolled back',
-			    15 => 'transaction ended',
-			    16 => 'creating database',
-			    17 => 'restarting database',
-			    18 => 'restoring database',
-			    19 => 'performing backup',
-			    20 => 'performing fast load',
-			    21 => 'performing fast unload',
-			    22 => 'wait to disable tablespace',
-			    23 => 'quiescing tablespace',
-			    24 => 'waiting for remote node',
-			    25 => 'pending results from remote request',
-			    26 => 'app decoupled from coord',
-			    27 => 'rollback to savepoint',
-			   );
-	$display = $status_table{$value} ||
-	  "(unknown application status code $value)";
+        my %status_table = (1  => 'connect pending',
+                            2  => 'connect completed',
+                            3  => 'UOW executing',
+                            4  => 'UOW waiting',
+                            5  => 'lock wait',
+                            6  => 'commit active',
+                            7  => 'rollback active',
+                            8  => 'recompiling plan',
+                            9  => 'compiling SQL stmt',
+                            10 => 'request interrupted',
+                            11 => 'disconnect pending',
+                            12 => 'prepared transaction',
+                            13 => 'heuristically committed',
+                            14 => 'heuristically rolled back',
+                            15 => 'transaction ended',
+                            16 => 'creating database',
+                            17 => 'restarting database',
+                            18 => 'restoring database',
+                            19 => 'performing backup',
+                            20 => 'performing fast load',
+                            21 => 'performing fast unload',
+                            22 => 'wait to disable tablespace',
+                            23 => 'quiescing tablespace',
+                            24 => 'waiting for remote node',
+                            25 => 'pending results from remote request',
+                            26 => 'app decoupled from coord',
+                            27 => 'rollback to savepoint',
+                           );
+        $display = $status_table{$value} ||
+          "(unknown application status code $value)";
     } elsif ($this->{'Name'} eq 'CLIENT_PLATFORM' ||
-	     $this->{'Name'} eq 'SERVER_PLATFORM') {
+             $this->{'Name'} eq 'SERVER_PLATFORM') {
         $display = DB2::Admin::Constants::->Lookup('Platform', $value) ||
           "<unknown client platform $value>";
     } elsif ($this->{'Name'} eq 'CONTAINER_TYPE') {
-	$display = DB2::Admin::Constants::->Lookup('ContainerType', $value) ||
+        $display = DB2::Admin::Constants::->Lookup('ContainerType', $value) ||
           "<unknown container type $value>";
     } elsif ($this->{'Name'} eq 'HADR_CONNECT_STATUS') {
-	$display = DB2::Admin::Constants::->Lookup('HadrConnectStatus', $value) ||
+        $display = DB2::Admin::Constants::->Lookup('HadrConnectStatus', $value) ||
           "<unknown HADR connect status $value>";
     } elsif ($this->{'Name'} eq 'HADR_ROLE') {
-	$display = DB2::Admin::Constants::->Lookup('HadrRole', $value) ||
+        $display = DB2::Admin::Constants::->Lookup('HadrRole', $value) ||
           "<unknown HADR role $value>";
     } elsif ($this->{'Name'} eq 'HADR_STATE') {
-	$display = DB2::Admin::Constants::->Lookup('HadrState', $value) ||
+        $display = DB2::Admin::Constants::->Lookup('HadrState', $value) ||
           "<unknown HADR state $value>";
     } elsif ($this->{'Name'} eq 'HADR_SYNCMODE') {
-	$display = DB2::Admin::Constants::->Lookup('HadrSyncMode', $value) ||
+        $display = DB2::Admin::Constants::->Lookup('HadrSyncMode', $value) ||
           "<unknown HADR sync mode $value>";
-    } elsif ($this->{'Name'} eq 'LOCK_MODE') {
-	my $constant = DB2::Admin::Constants::->Lookup('LockMode', $value);
-	if (defined $constant) {
-	    my $info = DB2::Admin::Constants::->GetInfo($constant);
-	    $display = $info->{'Comment'};
-	} else {
-	    $display = "<unknown lock mode $value>";
-	}
+    } elsif ($this->{'Name'} eq 'LOCK_MODE' ||
+             $this->{'Name'} eq 'LOCK_MODE_REQUESTED') {
+        my $constant = DB2::Admin::Constants::->Lookup('LockMode', $value);
+        if (defined $constant) {
+            my $info = DB2::Admin::Constants::->GetInfo($constant);
+            $display = $info->{'Comment'};
+        } else {
+            $display = "<unknown lock mode $value>";
+        }
     } elsif ($this->{'Name'} eq 'LOCK_OBJECT_TYPE') {
-	$display = DB2::Admin::Constants::->Lookup('LockObjectType', $value) ||
+        $display = DB2::Admin::Constants::->Lookup('LockObjectType', $value) ||
           "<unknown lock object type $value>";
     } elsif ($this->{'Name'} eq 'POOL_ID') {
-	my $constant = DB2::Admin::Constants::->Lookup('Heap', $value);
-	if (defined $constant) {
-	    $display = $constant;
-	} else {
-	    $display = "<unknown pool id $value>";
-	}
+        my $constant = DB2::Admin::Constants::->Lookup('Heap', $value);
+        if (defined $constant) {
+            $display = $constant;
+        } else {
+            $display = "<unknown pool id $value>";
+        }
     } elsif ($this->{'Name'} eq 'REORG_STATUS') {
-	$display = DB2::Admin::Constants::->Lookup('ReorgStatus', $value) ||
+        $display = DB2::Admin::Constants::->Lookup('ReorgStatus', $value) ||
           "<unknown reorg status $value>";
     } elsif ($this->{'Name'} eq 'STMT_OPERATION') {
-	my $constant = DB2::Admin::Constants::->Lookup('StatementOperation', $value);
-	if (defined $constant) {
-	    my $info = DB2::Admin::Constants::->GetInfo($constant);
-	    $display = $info->{'Comment'};
-	} else {
-	    $display = "<unknown statement operation $value>";
-	}
+        my $constant = DB2::Admin::Constants::->Lookup('StatementOperation', $value);
+        if (defined $constant) {
+            my $info = DB2::Admin::Constants::->GetInfo($constant);
+            $display = $info->{'Comment'};
+        } else {
+            $display = "<unknown statement operation $value>";
+        }
     } elsif ($this->{'Name'} eq 'STMT_TYPE') {
-	my $constant = DB2::Admin::Constants::->Lookup('StatementType', $value);
-	if (defined $constant) {
-	    my $info = DB2::Admin::Constants::->GetInfo($constant);
-	    $display = $info->{'Comment'};
-	} else {
-	    $display = "<unknown statement type $value>";
-	}
+        my $constant = DB2::Admin::Constants::->Lookup('StatementType', $value);
+        if (defined $constant) {
+            my $info = DB2::Admin::Constants::->GetInfo($constant);
+            $display = $info->{'Comment'};
+        } else {
+            $display = "<unknown statement type $value>";
+        }
     } elsif ($this->{'Name'} eq 'TABLE_TYPE') {
-	my $constant = DB2::Admin::Constants::->Lookup('TableType', $value);
-	if (defined $constant) {
-	    my $info = DB2::Admin::Constants::->GetInfo($constant);
-	    $display = $info->{'Comment'};
-	} else {
-	    $display = "<unknown table type $value>";
-	}
+        my $constant = DB2::Admin::Constants::->Lookup('TableType', $value);
+        if (defined $constant) {
+            my $info = DB2::Admin::Constants::->GetInfo($constant);
+            $display = $info->{'Comment'};
+        } else {
+            $display = "<unknown table type $value>";
+        }
     } elsif ($this->{'Name'} eq 'TABLESPACE_TYPE') {
         if ($value == 0) {
             $display = 'DMS';
@@ -408,13 +409,13 @@ sub _decode {
             confess "Unexpected value [$value] for element [$this->{Name}]";
         }
     } elsif ($this->{'Name'} eq 'UTILITY_TYPE') {
-	my $constant = DB2::Admin::Constants::->Lookup('UtilityType', $value);
-	if (defined $constant) {
-	    $display = $constant;
-	    $display =~ s/^SQLM_UTILITY_//;
-	} else {
-	    $display = "<unknown utility type $value>";
-	}
+        my $constant = DB2::Admin::Constants::->Lookup('UtilityType', $value);
+        if (defined $constant) {
+            $display = $constant;
+            $display =~ s/^SQLM_UTILITY_//;
+        } else {
+            $display = "<unknown utility type $value>";
+        }
     }
 
     $this->{'Display'} = $display;

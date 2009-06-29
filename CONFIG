@@ -3,12 +3,18 @@
 #
 
 #
-# The name of the database to conenct to in database-specific tests
+# The name of the database to connect to in database-specific tests
 #
 # The default is 'sample', assuming you have the IBM sample database
 # installed.  Specify a database name or alias.
 #
 DBNAME = sample
+
+#
+# The schema used for all tables.  This should match the userid that
+# created the sample database.
+#
+SCHEMA = MSDB2
 
 #
 # Allow the tests to update the database manager / database
@@ -28,24 +34,24 @@ REBIND_SCHEMA = nullid
 REBIND_PACKAGE = sysstat
 
 #
-# The source schema and table for the export test without LOBs
+# The source table for the export test without LOBs
 #
 SOURCE_TABLE = SALES
 
 #
-# The source schema and table for the export test with LOBs
+# The source table for the export test with LOBs
 #
 SOURCE_LOB_TABLE = EMP_PHOTO
 
 #
-# The source schema and table for the export test with XML
+# The source table for the export test with XML
 #
 SOURCE_XML_TABLE = PRODUCT
 
 #
-# The target schema and table for the import and load tests without
-# LOBs.  The target table must have the same structure as the source
-# table.  (create table XXX like YYY will work)
+# The target table for the import and load tests without LOBs.  The
+# target table must have the same structure as the source table.
+# (create table XXX like YYY will work)
 #
 # Source and target table may be the same, if you don't mind losing
 # the data if something goes wrong...
@@ -53,8 +59,8 @@ SOURCE_XML_TABLE = PRODUCT
 TARGET_TABLE = SALES2
 
 #
-# The target schema and table for the import and load tests with LOBs.
-# The target table must have the same structure as the source
+# The target table for the import and load tests with LOBs.  The
+# target table must have the same structure as the source
 # table. (create table XXX like YYY will work)
 #
 # Source and target table may be the same, if you don't mind losing
@@ -63,9 +69,9 @@ TARGET_TABLE = SALES2
 TARGET_LOB_TABLE = EMP_PHOTO_2
 
 #
-# The target schema and table for the import and load tests with XML.
-# The target table must have the same structure as the source
-# table. (create table XXX like YYY will work)
+# The target table for the import and load tests with XML.  The target
+# table must have the same structure as the source table. (create
+# table XXX like YYY will work)
 #
 # Source and target table may be the same, if you don't mind losing
 # the data if something goes wrong...

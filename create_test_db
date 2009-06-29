@@ -2,7 +2,7 @@
 #
 # create_test_db - Create a test database for the DB2::Admin test suite
 #
-# $Id: create_test_db,v 145.2 2007/11/20 21:52:10 biersma Exp $
+# $Id: create_test_db,v 165.1 2009/04/22 14:05:49 biersma Exp $
 #
 
 use strict;
@@ -28,10 +28,11 @@ system(@call);
 # Connect to the database and create additional tables
 #
 my $fname = "/tmp/commands.sql";
-open(COMMANDS, "> $fname") ||
+open(COMMANDS, '>', $fname) ||
   die "Cannot open '$fname' for output: $!";
-print COMMANDS <<_END_COMMANDS_;
+print COMMANDS <<'_END_COMMANDS_';
 connect to sample;
+update db cfg using trackmod yes logretain yes;
 
 create table sales2 like sales;
 create table emp_photo_2 like emp_photo;
@@ -42,7 +43,7 @@ _END_COMMANDS_
 ;
 
 if ($version >= 9) {
-    print COMMANDS <<_END_XML_COMMANDS_;
+    print COMMANDS <<'_END_XML_COMMANDS_';
 create table product2 like product;
 _END_XML_COMMANDS_
     ;
@@ -50,6 +51,3 @@ _END_XML_COMMANDS_
 close(COMMANDS);
 
 system("db2", "-tvf", $fname);
-
-
-

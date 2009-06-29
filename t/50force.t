@@ -1,7 +1,7 @@
 #
 # Test the 'force application' function
 #
-# $Id: 50force.t,v 145.1 2007/10/17 14:43:13 biersma Exp $
+# $Id: 50force.t,v 165.1 2009/04/22 14:06:39 biersma Exp $
 #
 
 #
@@ -40,14 +40,29 @@ my $snap = DB2::Admin->GetSnapshot('Subject' => 'SQLMA_DBASE_ALL');
 ok ($snap, "Database snapshot");
 
 my $now = time();
-$rc = system("db2 connect to $test_db > /tmp/err 2>&1");
-ok($rc == 0, "Connect to $test_db");
+if ($^O =~ /^MSWin/) {
+    #
+    # Force a delay to give the DB2 command time to connect
+    #
+    sleep(3);
+
+    $rc = system("start db2cmd db2 connect to $test_db > /tmp/err 2>&1");
+    ok($rc == 0, "Started DB2cmd to connect to $test_db");
+
+    #
+    # Force a delay to give the DB2 command time to connect
+    #
+    sleep(3);
+} else {			# Unix
+    $rc = system("db2 connect to $test_db > /tmp/err 2>&1");
+    ok($rc == 0, "Connect to $test_db");
+}
 
 $snap = DB2::Admin->GetSnapshot('Subject' => 'SQLMA_APPL_ALL');
 ok ($snap, "Application snapshot (before)");
 
 my $agent_id;
-my $username = getpwuid($<);
+my $username = ($^O =~ /^MSWin / ? $ENV{USERNAME} : getpwuid($<));
 foreach my $node ($snap->findNodes('APPL')) {
     my $dbname = $node->findValue('APPL_INFO/DB_NAME');
     $dbname =~ s/\s+$//;

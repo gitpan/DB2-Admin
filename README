@@ -53,24 +53,25 @@ release combinations to the maintainer.
   Operating System        DB2 Version        Perl Version
   ================        ===========        ============
   AIX (unknown release)	  8.2		     5.8
-  Red Hat EL 3 (x86)      8.1                5.8
   Red Hat EL 3 (x86)      8.2                5.8
   Red Hat EL 3 (x86)      9.1                5.8
   Red Hat EL 3 (x86)      9.5                5.8
   Red Hat EL 4 (x86_64)   8.2                5.8
   Red Hat EL 4 (x86_64)   9.1                5.8
   Red Hat EL 4 (x86_64)   9.5                5.8
-  Solaris 7 (SPARC)       7.2                5.8
-  Solaris 8 (SPARC)       8.2                5.8
+  Red Hat EL 4 (x86_64)   9.5                5.10
+  Red Hat EL 5 (x86_64)   9.7                5.8
   Solaris 10 (SPARC)      9.1                5.8
   Solaris 10 (SPARC)      9.5                5.8
+  Windows Vista Business  9.5                5.8
 
 =head1 INSTALLATION
 
 This module can only be installed if you have the C compiler used to
 build perl itself, plus a version of DB2 with the header files
 installed (the developer's edition).  You generally cannot build this
-module if you've downloaded a pre-compiled version of perl.
+module if you've downloaded a pre-compiled version of perl (but see
+Windows / ActiveState instructions in the next section).
 
 You need to run the test portions under a userid with DB2
 system administration privileges.
@@ -90,8 +91,8 @@ to specify the path where the DB2 files can be found, for example:
 
   export DB2_PREFIX=/opt/IBM/db2/V9.1
 
-The common environment variables DB2DIR and DB2_HOME can be used as
-well.
+The common environment variables DBAPTH, DB2DIR and DB2_HOME can be
+used as well.
 
 Please report the default prefix for platforms that the author doesn't
 have access to (i.e. not Linux, Solaris), so the module can support
@@ -119,6 +120,43 @@ Once the test completes, you can install the module with:
 
   make install
 
+=head1 INSTALLATION - WINDOWS
+
+Mike O'Reilly conttibuted the following notes to build the DB2::Admin
+module on Windows.
+
+The ActiveState Perl 5.8.8 for x64 is available for download built
+with Microsoft Visual C v6 with the freely available compiler in the
+"Microsoft Windows 2003 Server SP1 Platform SDK".  It is necessary to
+use the same compiler to build any Perl modules that use the C
+language. For VS2005 and VS3008 modules do not bind against MSVCRT.DLL
+(but instead use MSVCR90.DLL or MSVCR71.DLL etc). 
+
+The filename (on FTP search) that contains the correct compiler is
+"5.2.3790.2075.51.PlatformSDK_Svr2003R2_rtm.img" (aka PSDK). It may
+not be available on Microsoft websites, but is available elsewhere. It
+is not possible to build modules with Visual-Studio-2005 or
+Visual-Studio-2008 and get them to work with the pre-built ActiveState
+Per 5.8.x (unless you also rebuild perl itself from sources with the
+same toolkit, something I did not attempt).
+
+When DB2 is up and running (install as 'Administrator', then add
+target users to the DB2ADMNS or DB2USERS groups as appropriate), it is
+necessary to open a DB2CMD window , execute the PSDK "setenv /XP64
+/X64 /RETAIL" in that window, and perform the build in that
+window. Then I ran the following sequence of steps.
+
+  set DB2_VERSION=V9.5
+  perl parse_constants.pl
+  build/test/install Pod::Simple
+  build/test/install Pod::Escapes
+  build/test/install Test::Pod
+  modify CONFIG appropriately
+  perl create_test_db
+  perl makefile.pl
+  nmake
+  nmake test
+
 =head1 RELEASE NOTES
 
 The CHANGES.html file has a complete, historical list of all
@@ -133,9 +171,9 @@ The code is currently maintained and supported by:
 =cut
 
 #
-# $Id: README,v 160.1 2008/05/28 18:32:34 biersma Exp $
+# $Id: README,v 165.1 2009/04/22 14:05:35 biersma Exp $
 # 
-# Copyright (c) 2007-2008, Morgan Stanley & Co. Incorporated
+# Copyright (c) 2007-2009, Morgan Stanley & Co. Incorporated
 # See ..../COPYING for terms of distribution.
 #
 # This library is free software; you can redistribute it and/or

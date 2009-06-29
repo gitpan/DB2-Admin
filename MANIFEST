@@ -1,10 +1,14 @@
 Admin.xs
 CHANGES
+CHANGES.html
 CONFIG
 COPYING
+LICENSE
+MANIFEST
 META.yml
 Makefile.PL
 README
+README.html
 create_test_db
 lib/DB2/Admin.pm
 lib/DB2/Admin/Constants.pm
@@ -12,7 +16,6 @@ lib/DB2/Admin/DataElement.pm
 lib/DB2/Admin/DataStream.pm
 lib/DB2/Admin/EventParser.pm
 lib/DB2/Admin/db2_config_params.pl
-lib/DB2/Admin/db2_constants.pl
 sample/copy_data.pl
 sample/db2_check_lock.pl
 sample/db2_trace_connection

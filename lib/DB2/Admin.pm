@@ -1,7 +1,7 @@
 #
 # DB2::Admin - Access to DB2 administrative API
 #
-# Copyright (c) 2007-2008, Morgan Stanley & Co. Incorporated
+# Copyright (c) 2007-2009, Morgan Stanley & Co. Incorporated
 # See ..../COPYING for terms of distribution.
 #
 # This library is free software; you can redistribute it and/or
@@ -39,7 +39,7 @@
 # THIS OR ANOTHER EQUIVALENT DISCLAIMER AS WELL AS ANY OTHER LICENSE
 # TERMS THAT MAY APPLY.
 #
-# $Id: Admin.pm,v 160.1 2008/03/24 15:26:09 biersma Exp $
+# $Id: Admin.pm,v 165.5 2009/04/22 14:06:25 biersma Exp $
 #
 
 package DB2::Admin;
@@ -54,7 +54,7 @@ use DB2::Admin::Constants;
 use DB2::Admin::DataStream;
 
 use vars qw($VERSION);
-$VERSION = '3.0';
+$VERSION = '3.1';
 bootstrap DB2::Admin $VERSION;
 
 #
@@ -67,10 +67,10 @@ bootstrap DB2::Admin $VERSION;
 my %options;
 BEGIN {
     %options = ('PrintError' => 1,
-		'PrintWarn'  => 1,
-		'RaiseError' => 0,
-		'RaiseWarn'  => 0,
-	       );
+                'PrintWarn'  => 1,
+                'RaiseError' => 0,
+                'RaiseWarn'  => 0,
+               );
 }
 
 #
@@ -94,9 +94,9 @@ sub SetOptions {
     my ($class, %params) = @_;
 
     while (my ($option, $value) = each %params) {
-	confess "Invalid option '$option'"
-	  unless (defined $options{$option});
-	$options{$option} = $value;
+        confess "Invalid option '$option'"
+          unless (defined $options{$option});
+        $options{$option} = $value;
     }
     return %options;
 }
@@ -108,9 +108,9 @@ sub SetOptions {
 sub SetConnectAttributes {
     my ($class, %params) = @_;
     while (my ($option, $value) = each %params) {
-	confess "Invalid connect attribute '$option'"
-	  unless (defined $connect_attr{$option});
-	$connect_attr{$option} = $value;
+        confess "Invalid connect attribute '$option'"
+          unless (defined $connect_attr{$option});
+        $connect_attr{$option} = $value;
     }
     return %connect_attr;
 }
@@ -129,21 +129,21 @@ sub SetConnectAttributes {
 sub Attach {
     my $class = shift;
     my %params = validate(@_, { 'Instance' => 0,
-				'Userid'   => 0,
-				'Password' => 0,
-			      });
+                                'Userid'   => 0,
+                                'Password' => 0,
+                              });
     unless (defined $params{Instance}) {
-	$params{Instance} = $ENV{DB2INSTANCE} ||
-	  die "Must specify 'Instance' or \$ENV{DB2INSTANCE}\n";
+        $params{Instance} = $ENV{DB2INSTANCE} ||
+          die "Must specify 'Instance' or \$ENV{DB2INSTANCE}\n";
     }
     my $retval = sqleatin($params{'Instance'},
-			  $params{'Userid'} || '',
-			  $params{'Password'} || '');
+                          $params{'Userid'} || '',
+                          $params{'Password'} || '');
     if (defined $retval) {
-	return $class->_decode_attach_info($retval);
+        return $class->_decode_attach_info($retval);
     } else {
-	$class->_handle_error("Attach");
-	return;
+        $class->_handle_error("Attach");
+        return;
     }
 }
 
@@ -159,10 +159,10 @@ sub InquireAttach {
 
     my $retval = sqleatin('', '', '');
     if (defined $retval) {
-	return $class->_decode_attach_info($retval);
+        return $class->_decode_attach_info($retval);
     } else {
-	$class->_handle_error("InquireAttach");
-	return;
+        $class->_handle_error("InquireAttach");
+        return;
     }
 }
 
@@ -188,8 +188,8 @@ sub Detach {
 sub GetMonitorSwitches {
     my $class = shift;
     my %params = validate(@_, { 'Version' => 0,
-				'Node'    => 0,
-			      });
+                                'Node'    => 0,
+                              });
 
     $params{Version} ||= 'SQLM_CURRENT_VERSION';
     $params{Node} = 'SQLM_CURRENT_NODE' unless (defined $params{Node});
@@ -199,8 +199,8 @@ sub GetMonitorSwitches {
       if ($db2_node =~ /\D/);
 
     my $elem_stream = db2MonitorSwitches({}, $db2_version, $db2_node) || do {
-	$class->_handle_error("GetMonitorSwitches");
-	return;
+        $class->_handle_error("GetMonitorSwitches");
+        return;
     };
 
     return $class->_decode_monitor_switches($elem_stream);
@@ -218,9 +218,9 @@ sub GetMonitorSwitches {
 sub SetMonitorSwitches {
     my $class = shift;
     my %params = validate(@_, { 'Switches' => 1,
-				'Version'  => 0,
-				'Node'     => 0,
-			      });
+                                'Version'  => 0,
+                                'Node'     => 0,
+                              });
 
     $params{Version} ||= 'SQLM_CURRENT_VERSION';
     $params{Node} = 'SQLM_CURRENT_NODE' unless (defined $params{Node});
@@ -230,10 +230,10 @@ sub SetMonitorSwitches {
       if ($db2_node =~ /\D/);
 
     my $elem_stream  = db2MonitorSwitches($params{Switches},
-					  $db2_version, $db2_node);
+                                          $db2_version, $db2_node);
     unless ($elem_stream) {
-	$class->_handle_error("SetMonitorSwitches");
-	return;
+        $class->_handle_error("SetMonitorSwitches");
+        return;
     }
 
     return $class->_decode_monitor_switches($elem_stream);
@@ -253,15 +253,15 @@ sub SetMonitorSwitches {
 # - DB2::Admin::DataStream object / undef
 # - Binary data (only when invoked in array context)
 #
-my $snapshot_sizes;		# Key -> [ 10 last sizes ]
+my $snapshot_sizes;             # Key -> [ 10 last sizes ]
 sub GetSnapshot {
     my $class = shift;
     my %params = validate(@_, { 'Subject' => 1,
-				'Version' => 0,
-				'Node'    => 0,
-				'Class'   => 0,
-				'Store'   => 0,
-			      });
+                                'Version' => 0,
+                                'Node'    => 0,
+                                'Class'   => 0,
+                                'Store'   => 0,
+                              });
 
     $params{Version} ||= 'SQLM_CURRENT_VERSION';
     $params{Node} = 'SQLM_CURRENT_NODE' unless (defined $params{Node});
@@ -270,10 +270,10 @@ sub GetSnapshot {
 
     my %values;
     $values{Node} = ($params{Node} =~ /\D/ ?
-		     DB2::Admin::Constants::->GetValue($params{Node}) :
-		     $params{Node});
+                     DB2::Admin::Constants::->GetValue($params{Node}) :
+                     $params{Node});
     foreach my $key (qw(Version Class)) {
-	$values{$key} = DB2::Admin::Constants::->GetValue($params{$key});
+        $values{$key} = DB2::Admin::Constants::->GetValue($params{$key});
     }
 
     #
@@ -287,62 +287,62 @@ sub GetSnapshot {
     my (@areas, @keys);
     my $subject = $params{'Subject'};
     $subject = [ $subject ] unless (ref($subject) &&
-				    ref($subject) eq 'ARRAY');
+                                    ref($subject) eq 'ARRAY');
     foreach my $elem (@$subject) {
-	my $elem_key;
-	if (ref($elem)) {
-	    my $type_name = $elem->{'Type'};
-	    my $entry = { Type => DB2::Admin::Constants::->GetValue($type_name) };
-	    $elem_key = $type_name;
-	    foreach (qw(AgentId Object)) {
-		$elem_key .= ':';
-		if (defined $elem->{$_}) {
-		    $entry->{$_} = $elem->{$_};
-		    $elem_key .= $elem->{$_};
-		}
-	    }
-	    push @areas, $entry;
-	    push @keys, $elem_key;
-	} else {
-	    my $value = DB2::Admin::Constants::->GetValue($elem);
-	    push @areas, { 'Type' =>  $value };
-	    push @keys, $elem . "::";
-	}
-    }				# End foreach: entry in subject list
+        my $elem_key;
+        if (ref($elem)) {
+            my $type_name = $elem->{'Type'};
+            my $entry = { Type => DB2::Admin::Constants::->GetValue($type_name) };
+            $elem_key = $type_name;
+            foreach (qw(AgentId Object)) {
+                $elem_key .= ':';
+                if (defined $elem->{$_}) {
+                    $entry->{$_} = $elem->{$_};
+                    $elem_key .= $elem->{$_};
+                }
+            }
+            push @areas, $entry;
+            push @keys, $elem_key;
+        } else {
+            my $value = DB2::Admin::Constants::->GetValue($elem);
+            push @areas, { 'Type' =>  $value };
+            push @keys, $elem . "::";
+        }
+    }                           # End foreach: entry in subject list
     my $size_key = join(',', @keys);
     my $initial_size = 0;
     if (defined $snapshot_sizes->{$size_key}) {
-	foreach my $size (@{ $snapshot_sizes->{$size_key} }) {
-	    $initial_size = $size if ($initial_size < $size);
-	}
-	$initial_size += 4096;	# Add 4K poker space
+        foreach my $size (@{ $snapshot_sizes->{$size_key} }) {
+            $initial_size = $size if ($initial_size < $size);
+        }
+        $initial_size += 4096;  # Add 4K poker space
     } elsif ($params{Class} eq 'SQLM_CLASS_DEFAULT') {
-	#
-	# Call db2GetSnapshotSize, round up to at least 16K,
-	# use size increment of 16K
-	#
-	$initial_size = db2GetSnapshotSize(\@areas, $values{Version},
-					   $values{Node}, $values{Class});
-	unless (defined $initial_size) {
-	    $class->_handle_error("GetSnapshotSize");
-	    return;
-	}
-	$initial_size = 16384 if ($initial_size < 16384);
+        #
+        # Call db2GetSnapshotSize, round up to at least 16K,
+        # use size increment of 16K
+        #
+        $initial_size = db2GetSnapshotSize(\@areas, $values{Version},
+                                           $values{Node}, $values{Class});
+        unless (defined $initial_size) {
+            $class->_handle_error("GetSnapshotSize");
+            return;
+        }
+        $initial_size = 16384 if ($initial_size < 16384);
     } else {
-	#
-	# Health snapshots: db2GetSnapshotSize returns bogus data,
-	# start with 50K
-	#
-	$initial_size = 50 * 1024;
+        #
+        # Health snapshots: db2GetSnapshotSize returns bogus data,
+        # start with 50K
+        #
+        $initial_size = 50 * 1024;
     }
 
     my $snapshot_data = db2GetSnapshot(\@areas, $values{Version},
-				       $values{Node}, $values{Class},
-				       $initial_size, 16384,
-				       $params{Store});
+                                       $values{Node}, $values{Class},
+                                       $initial_size, 16384,
+                                       $params{Store});
     unless (defined $snapshot_data) {
-	$class->_handle_error("GetSnapshot");
-	return;
+        $class->_handle_error("GetSnapshot");
+        return;
     }
 
     #
@@ -355,12 +355,12 @@ sub GetSnapshot {
     #
     push @{ $snapshot_sizes->{$size_key} }, length($snapshot_data);
     while (@{ $snapshot_sizes->{$size_key} } > 10) {
-	shift @{ $snapshot_sizes->{$size_key} };
+        shift @{ $snapshot_sizes->{$size_key} };
     }
 
     my $stream = DB2::Admin::DataStream::->new($snapshot_data);
     if (wantarray) {
-	return ($stream, $snapshot_data);
+        return ($stream, $snapshot_data);
     }
     return $stream;
 }
@@ -379,9 +379,9 @@ sub GetSnapshot {
 sub ResetMonitor {
     my $class = shift;
     my %params = validate(@_, { 'Alias'   => 0,
-				'Version' => 0,
-				'Node'    => 0,
-			      });
+                                'Version' => 0,
+                                'Node'    => 0,
+                              });
 
     $params{Alias} ||= '';
     $params{Version} ||= 'SQLM_CURRENT_VERSION';
@@ -394,8 +394,8 @@ sub ResetMonitor {
 
     my $rc = db2ResetMonitor($all, $params{Alias}, $db2_version, $db2_node);
     unless ($rc) {
-	$class->_handle_error("ResetMonitor");
-	return;
+        $class->_handle_error("ResetMonitor");
+        return;
     }
     return 1;
 }
@@ -418,14 +418,14 @@ sub ResetMonitor {
 sub GetDbmConfig {
     my $class = shift;
     my %params = validate(@_, { 'Param'    => 1,
-				'Flag'    => 0,
-				'Version' => 0,
-			      });
+                                'Flag'    => 0,
+                                'Version' => 0,
+                              });
 
     my $retval = $class->_get_config_params(%params);
     unless ($retval) {
-	$class->_handle_error("GetDbmConfig");
-	return;
+        $class->_handle_error("GetDbmConfig");
+        return;
     }
     return @$retval;
 }
@@ -450,14 +450,14 @@ sub GetDbmConfig {
 sub UpdateDbmConfig {
     my $class = shift;
     my %params = validate(@_, { 'Param'    => 1,
-				'Flag'    => 0,
-				'Version' => 0,
-			      });
+                                'Flag'    => 0,
+                                'Version' => 0,
+                              });
 
     my $retval = $class->_set_config_params(%params);
     unless ($retval) {
-	$class->_handle_error("UpdateDbmConfig");
-	return;
+        $class->_handle_error("UpdateDbmConfig");
+        return;
     }
     return $retval;
 }
@@ -481,15 +481,15 @@ sub UpdateDbmConfig {
 sub GetDatabaseConfig {
     my $class = shift;
     my %params = validate(@_, { 'Param'    => 1,
-				'Database' => 1,
-				'Flag'     => 0,
-				'Version'  => 0,
-			      });
+                                'Database' => 1,
+                                'Flag'     => 0,
+                                'Version'  => 0,
+                              });
 
     my $retval = $class->_get_config_params(%params);
     unless ($retval) {
-	$class->_handle_error("GetDatabaseConfig");
-	return;
+        $class->_handle_error("GetDatabaseConfig");
+        return;
     }
     return @$retval;
 }
@@ -515,15 +515,15 @@ sub GetDatabaseConfig {
 sub UpdateDatabaseConfig {
     my $class = shift;
     my %params = validate(@_, { 'Param'    => 1,
-				'Database' => 1,
-				'Flag'     => 0,
-				'Version'  => 0,
-			      });
+                                'Database' => 1,
+                                'Flag'     => 0,
+                                'Version'  => 0,
+                              });
 
     my $retval = $class->_set_config_params(%params);
     unless ($retval) {
-	$class->_handle_error("UpdateDatabaseConfig");
-	return;
+        $class->_handle_error("UpdateDatabaseConfig");
+        return;
     }
     return $retval;
 }
@@ -540,13 +540,13 @@ sub UpdateDatabaseConfig {
 sub GetDatabaseDirectory {
     my $class = shift;
     my %params = validate(@_, { 'Path' => 0,
-			      });
+                              });
     my $path = (defined $params{Path} ? $params{Path} : '');
 
     my $retval = db2DatabaseDirectory($path);
     unless ($retval) {
-	$class->_handle_error("GetDatabaseDirectory");
-	return;
+        $class->_handle_error("GetDatabaseDirectory");
+        return;
     }
     return @$retval;
 }
@@ -558,21 +558,21 @@ sub GetDatabaseDirectory {
 sub CatalogDatabase {
     my $class = shift;
     my %params = validate(@_, { 'Alias'          => 1,
-				'Database'       => 1,
-				'NodeName'       => 0,
-				'Path'           => 0,
-				'Comment'        => 0,
-				'DBType'         => 1,
-				'Authentication' => 0,
-				'Principal'      => 0,
-			      });
+                                'Database'       => 1,
+                                'NodeName'       => 0,
+                                'Path'           => 0,
+                                'Comment'        => 0,
+                                'DBType'         => 1,
+                                'Authentication' => 0,
+                                'Principal'      => 0,
+                              });
 
     my $retval = sqlecadb(\%params);
     unless ($retval) {
-	$class->_handle_error("CatalogDatabase");
-	return;
+        $class->_handle_error("CatalogDatabase");
+        return;
     }
-    return $retval;		# 1
+    return $retval;             # 1
 }
 
 
@@ -590,10 +590,10 @@ sub UncatalogDatabase {
 
     my $retval = sqleuncd($params{Alias});
     unless ($retval) {
-	$class->_handle_error("UncatalogDatabase");
-	return;
+        $class->_handle_error("UncatalogDatabase");
+        return;
     }
-    return $retval;		# 1
+    return $retval;             # 1
 }
 
 
@@ -609,19 +609,19 @@ sub GetNodeDirectory {
 
     my $retval = db2NodeDirectory();
     unless ($retval) {
-	unless (sqlcode() == -1027) { # -1027: empty node dir
-	    $class->_handle_error("GetNodeDirectory");
-	}
-	return;
+        unless (sqlcode() == -1027) { # -1027: empty node dir
+            $class->_handle_error("GetNodeDirectory");
+        }
+        return;
     }
     foreach my $entry (@$retval) {
-	my $platform_code = delete $entry->{'OSType'};
-	my $platform_name = DB2::Admin::Constants::->
-	  Lookup('Platform', $platform_code);
-	if (defined $platform_name) {
-	    $platform_name =~ s/^SQLM_PLATFORM_//;
-	    $entry->{'OS Type'} = $platform_name;
-	}
+        my $platform_code = delete $entry->{'OSType'};
+        my $platform_name = DB2::Admin::Constants::->
+          Lookup('Platform', $platform_code);
+        if (defined $platform_name) {
+            $platform_name =~ s/^SQLM_PLATFORM_//;
+            $entry->{'OS Type'} = $platform_name;
+        }
     }
     return @$retval;
 }
@@ -633,19 +633,19 @@ sub GetNodeDirectory {
 sub CatalogNode {
     my $class = shift;
     my %params = validate(@_, { 'NodeName'     => 1,
-				'Comment'      => 0,
-				'Protocol'     => 1,
-				'HostName'     => 0,
-				'ServiceName'  => 0,
-				'InstanceName' => 0,
-			      });
+                                'Comment'      => 0,
+                                'Protocol'     => 1,
+                                'HostName'     => 0,
+                                'ServiceName'  => 0,
+                                'InstanceName' => 0,
+                              });
 
     my $retval = sqlectnd(\%params);
     unless ($retval) {
-	$class->_handle_error("CatalogNode");
-	return;
+        $class->_handle_error("CatalogNode");
+        return;
     }
-    return $retval;		# 1
+    return $retval;             # 1
 }
 
 
@@ -663,10 +663,10 @@ sub UncatalogNode {
 
     my $retval = sqleuncn($params{NodeName});
     unless ($retval) {
-	$class->_handle_error("UncatalogNode");
-	return;
+        $class->_handle_error("UncatalogNode");
+        return;
     }
-    return $retval;		# 1
+    return $retval;             # 1
 }
 
 
@@ -682,10 +682,10 @@ sub GetDCSDirectory {
 
     my $retval = db2DCSDirectory();
     unless ($retval) {
-	unless (sqlcode() == 1312) { # 1312: DCS directory empty
-	    $class->_handle_error("GetDCSDirectory");
-	}
-	return;
+        unless (sqlcode() == 1312) { # 1312: DCS directory empty
+            $class->_handle_error("GetDCSDirectory");
+        }
+        return;
     }
     return @$retval;
 }
@@ -697,18 +697,18 @@ sub GetDCSDirectory {
 sub CatalogDCSDatabase {
     my $class = shift;
     my %params = validate(@_, { 'Database'  => 1,
-				'Target'    => 1,
-				'Comment'   => 0,
-				'Library'   => 0,
-				'Parameter' => 0,
-			      });
+                                'Target'    => 1,
+                                'Comment'   => 0,
+                                'Library'   => 0,
+                                'Parameter' => 0,
+                              });
 
     my $retval = sqlegdad(\%params);
     unless ($retval) {
-	$class->_handle_error("CatalogNode");
-	return;
+        $class->_handle_error("CatalogNode");
+        return;
     }
-    return $retval;		# 1
+    return $retval;             # 1
 }
 
 
@@ -726,10 +726,10 @@ sub UncatalogDCSDatabase {
 
     my $retval = sqlegdel($params{Database});
     unless ($retval) {
-	$class->_handle_error("UncatalogDCSDatabase");
-	return;
+        $class->_handle_error("UncatalogDCSDatabase");
+        return;
     }
-    return $retval;		# 1
+    return $retval;             # 1
 }
 
 
@@ -744,7 +744,7 @@ sub ForceAllApplications {
 
     my $rc = sqlefrce('All');
     unless ($rc) {
-	$class->_handle_error("ForceAllApplications");
+        $class->_handle_error("ForceAllApplications");
     }
     return $rc;
 }
@@ -762,7 +762,7 @@ sub ForceApplications {
 
     my $rc = sqlefrce(\@_);
     unless ($rc) {
-	$class->_handle_error("ForceApplications");
+        $class->_handle_error("ForceApplications");
     }
     return $rc;
 }
@@ -776,10 +776,10 @@ sub ForceApplications {
 sub Connect {
     my $class = shift;
     my %params = validate(@_, { 'Database'    => 1,
-				'Userid'      => 0,
-				'Password'    => 0,
-				'ConnectAttr' => 0,
-			      });
+                                'Userid'      => 0,
+                                'Password'    => 0,
+                                'ConnectAttr' => 0,
+                              });
     my ($db_name, $userid, $passwd, $extra_attrs) =
       @params{qw(Database Userid Password ConnectAttr)};
     $userid = '' unless (defined $userid);
@@ -790,17 +790,17 @@ sub Connect {
     #print STDERR "XXX: About to connect to [$db_name] using userid [$userid] and password [$passwd]\n";
     my $rc = db_connect($db_name, $userid, $passwd, \%combined_attr);
     unless ($rc) {
-	#
-	# We cannot call _handle_error(), as sqlcode() is not set for
-	# this function.  Note this is an error, not a warning.
-	#
-	my $msg = "Error in Connect: cannot connect to database '$db_name'";
-	if ($options{'PrintError'}) {
-	    warn $msg;
-	}
-	if ($options{'RaiseError'}) {
-	    die $msg;
-	}
+        #
+        # We cannot call _handle_error(), as sqlcode() is not set for
+        # this function.  Note this is an error, not a warning.
+        #
+        my $msg = "Error in Connect: cannot connect to database '$db_name'";
+        if ($options{'PrintError'}) {
+            warn $msg;
+        }
+        if ($options{'RaiseError'}) {
+            die $msg;
+        }
     }
     return $rc;
 }
@@ -815,18 +815,18 @@ sub Disconnect {
 
     my $rc = db_disconnect($params{Database});
     unless ($rc) {
-	#
-	# We cannot call _handle_error(), as sqlcode() is not set for
-	# this function.  Note we treat this as an error, not a
-	# warning.
-	#
-	my $msg = "Error in Disconnect: cannot disconnect from database '$params{Database}'";
-	if ($options{'PrintError'}) {
-	    warn $msg;
-	}
-	if ($options{'RaiseError'}) {
-	    die $msg;
-	}
+        #
+        # We cannot call _handle_error(), as sqlcode() is not set for
+        # this function.  Note we treat this as an error, not a
+        # warning.
+        #
+        my $msg = "Error in Disconnect: cannot disconnect from database '$params{Database}'";
+        if ($options{'PrintError'}) {
+            warn $msg;
+        }
+        if ($options{'RaiseError'}) {
+            die $msg;
+        }
     }
     return $rc;
 }
@@ -856,37 +856,37 @@ sub Disconnect {
 sub Export {
     my $class = shift;
     my %params = validate(@_, { 'Database'      => 1,
-				'Schema'        => 1,
-				'Table'         => 1,
-				'Columns'       => 0,
-				'Where'         => 0,
-				'FinalClauses'  => 0,
-				'FileType'      => 1,
-				'FileOptions'   => 0,
-				'ExportOptions' => 0,
-				'OutputFile'    => 1,
-				'LogFile'       => 0,
-				'LobPath'       => 0,
-				'LobFile'       => 0,
-				'XmlPath'       => 0,
-				'XmlFile'       => 0,
-			      });
+                                'Schema'        => 1,
+                                'Table'         => 1,
+                                'Columns'       => 0,
+                                'Where'         => 0,
+                                'FinalClauses'  => 0,
+                                'FileType'      => 1,
+                                'FileOptions'   => 0,
+                                'ExportOptions' => 0,
+                                'OutputFile'    => 1,
+                                'LogFile'       => 0,
+                                'LobPath'       => 0,
+                                'LobFile'       => 0,
+                                'XmlPath'       => 0,
+                                'XmlFile'       => 0,
+                              });
 
     #
     # Construct a SQL select clause
     #
     my $select = "SELECT ";
     if (defined $params{Columns}) {
-	$select .= join(',', @{ $params{Columns} });
+        $select .= join(',', @{ $params{Columns} });
     } else {
-	$select .= '*';
+        $select .= '*';
     }
     $select .= " FROM $params{Schema}.$params{Table}";
     if (defined $params{Where}) {
-	$select .= " WHERE $params{Where}";
+        $select .= " WHERE $params{Where}";
     }
     if (defined $params{FinalClauses}) {
-	$select .= " $params{FinalClauses}";
+        $select .= " $params{FinalClauses}";
     }
     #print STDERR "XXX: Have export SELECT stmt [$select]\n";
 
@@ -895,121 +895,121 @@ sub Export {
     #
     my $file_options = '';
     if ($params{FileType} eq 'DEL') {
-	#$file_type = 'SQL_DEL';
-	if (defined $params{FileOptions}) {
-	    my @opts = %{ $params{FileOptions} };
-	    my %opts = validate(@opts, { 'CharDel'         => 0,
-					 'CodePage'        => 0,
-					 'ColDel'          => 0,
-					 'DatesISO'        => 0,
-					 'DecPlusBlank'    => 0,
-					 'NoCharDel'       => 0,
-					 'StripZeros'      => 0,
-					 'TimestampFormat' => 0,
-					 'LobsInFile'      => 0,
-					 'XmlInSepFiles'   => 0,
-				       });
-	    if (defined $opts{CharDel}) { # Special quoting
-		$file_options .= " chardel$opts{CharDel}";
-		if ($opts{CharDel} eq '"' || $opts{CharDel} eq "'") {
-		    $file_options .= $opts{CharDel};
-		}
-	    }
+        #$file_type = 'SQL_DEL';
+        if (defined $params{FileOptions}) {
+            my @opts = %{ $params{FileOptions} };
+            my %opts = validate(@opts, { 'CharDel'         => 0,
+                                         'CodePage'        => 0,
+                                         'ColDel'          => 0,
+                                         'DatesISO'        => 0,
+                                         'DecPlusBlank'    => 0,
+                                         'NoCharDel'       => 0,
+                                         'StripZeros'      => 0,
+                                         'TimestampFormat' => 0,
+                                         'LobsInFile'      => 0,
+                                         'XmlInSepFiles'   => 0,
+                                       });
+            if (defined $opts{CharDel}) { # Special quoting
+                $file_options .= " chardel$opts{CharDel}";
+                if ($opts{CharDel} eq '"' || $opts{CharDel} eq "'") {
+                    $file_options .= $opts{CharDel};
+                }
+            }
             foreach my $opt (qw(ColDel)) { # option+value, no delimiter
                 if (defined $opts{$opt}) {
                     $file_options .= " \L$opt\E$opts{$opt}";
                 }
             }
-	    foreach my $opt (qw(CodePage)) {
-		if (defined $opts{$opt}) {
-		    my $value = $opts{$opt};
-		    $file_options .= " \L$opt\E=$value";
-		}
-	    }
-	    foreach my $opt (qw(TimestampFormat)) { # Quoted option+delimiter
-		if (defined $opts{$opt}) {
-		    my $value = $opts{$opt};
-		    if ($value =~ /"/) {
-			confess "Invalid FileOptions '$opt' option value '$value' - cannot have embedded quotes";
-		    }
-		    $file_options .= " \L$opt\E=\"$value\"";
-		}
-	    }
-	    foreach my $opt (qw(NoCharDel DatesISO DecPlusBlank
-				LobsInFile StripZeros XmlInSepFiles)) {
-		if ($opts{$opt}) { # Boolean flag: present and set
-		    $file_options .= " \L$opt\E";
-		}
-	    }
-	}
+            foreach my $opt (qw(CodePage)) {
+                if (defined $opts{$opt}) {
+                    my $value = $opts{$opt};
+                    $file_options .= " \L$opt\E=$value";
+                }
+            }
+            foreach my $opt (qw(TimestampFormat)) { # Quoted option+delimiter
+                if (defined $opts{$opt}) {
+                    my $value = $opts{$opt};
+                    if ($value =~ /"/) {
+                        confess "Invalid FileOptions '$opt' option value '$value' - cannot have embedded quotes";
+                    }
+                    $file_options .= " \L$opt\E=\"$value\"";
+                }
+            }
+            foreach my $opt (qw(NoCharDel DatesISO DecPlusBlank
+                                LobsInFile StripZeros XmlInSepFiles)) {
+                if ($opts{$opt}) { # Boolean flag: present and set
+                    $file_options .= " \L$opt\E";
+                }
+            }
+        }
     } elsif ($params{FileType} eq 'IXF') {
-	if (defined $params{FileOptions}) {
-	    my @opts = %{ $params{FileOptions} };
-	    my %opts = validate(@opts, { 'LobsInFile'    => 0,
-					 'XmlInSepFiles' => 0,
-				       });
-	    foreach my $opt (qw(LobsInFile XmlInSepFiles)) {
-		if ($opts{$opt}) { # Boolean flag: present and set
-		    $file_options .= " \L$opt\E";
-		}
-	    }
-	}
+        if (defined $params{FileOptions}) {
+            my @opts = %{ $params{FileOptions} };
+            my %opts = validate(@opts, { 'LobsInFile'    => 0,
+                                         'XmlInSepFiles' => 0,
+                                       });
+            foreach my $opt (qw(LobsInFile XmlInSepFiles)) {
+                if ($opts{$opt}) { # Boolean flag: present and set
+                    $file_options .= " \L$opt\E";
+                }
+            }
+        }
     } else {
-	confess "Unexpected file type '$params{FileType}'; expected 'DEL' or 'IXF'";
+        confess "Unexpected file type '$params{FileType}'; expected 'DEL' or 'IXF'";
     }
 
     #
     # Verify export options
     #
     if (defined $params{ExportOptions}) {
-	my @opts = %{ $params{ExportOptions} };
-	my %opts = validate(@opts, { 'XmlSaveSchema' => 1,
-				   });
+        my @opts = %{ $params{ExportOptions} };
+        my %opts = validate(@opts, { 'XmlSaveSchema' => 1,
+                                   });
     }
 
     #
     # Verify lob-related options
     #
     if (defined $params{FileOptions} && $params{FileOptions}{LobsInFile}) {
-	confess "LobsInFile file option requires LobPath parameter"
-	  unless (defined $params{LobPath});
+        confess "LobsInFile file option requires LobPath parameter"
+          unless (defined $params{LobPath});
     }
     if (defined $params{LobPath} &&
-	( !defined $params{FileOptions} ||
-	  !defined $params{FileOptions}{LobsInFile} )) {
-	confess "LobPath parameter requires LobsInFile file option";
+        ( !defined $params{FileOptions} ||
+          !defined $params{FileOptions}{LobsInFile} )) {
+        confess "LobPath parameter requires LobsInFile file option";
     }
     if (defined $params{LobFile} && ! defined $params{LobPath}) {
-	confess "LobFile parameter requires LobPath parameter";
+        confess "LobFile parameter requires LobPath parameter";
     }
 
     #
     # Verify XML-related options
     #
     if (defined $params{FileOptions} && $params{FileOptions}{XmlInSepFiles}) {
-	confess "XmlInSepFiles file option requires XmlPath parameter"
-	  unless (defined $params{XmlPath});
+        confess "XmlInSepFiles file option requires XmlPath parameter"
+          unless (defined $params{XmlPath});
     }
     if (defined $params{ExportOptions} && $params{ExportOptions}{XmlSaveSchema}) {
-	confess "XmlSaveSchema export option requires XmlPath parameter"
-	  unless (defined $params{XmlPath});
+        confess "XmlSaveSchema export option requires XmlPath parameter"
+          unless (defined $params{XmlPath});
     }
     if (defined $params{XmlFile} && ! defined $params{XmlPath}) {
-	confess "XmlFile parameter requires XmlPath parameter";
+        confess "XmlFile parameter requires XmlPath parameter";
     }
 
     my $rc = db2Export($params{Database}, $select, $params{FileType},
-		       $params{OutputFile},
-		       $params{LogFile} || "/dev/null",
-		       $file_options,
-		       $params{LobPath}, # May be undef
-		       $params{LobFile}, # May be undef,
-		       $params{ExportOptions} || {},
-		       $params{XmlPath}, # May be undef
-		       $params{XmlFile}, # May be undef
-		      );
+                       $params{OutputFile},
+                       $params{LogFile} || _null_device(),
+                       $file_options,
+                       $params{LobPath}, # May be undef
+                       $params{LobFile}, # May be undef,
+                       $params{ExportOptions} || {},
+                       $params{XmlPath}, # May be undef
+                       $params{XmlFile}, # May be undef
+                      );
     if ($rc < 0) {
-	$class->_handle_error("Export");
+        $class->_handle_error("Export");
     }
     return $rc;
 }
@@ -1038,30 +1038,30 @@ sub Export {
 sub Import {
     my $class = shift;
     my %params = validate(@_, { 'Database'      => 1,
-				'Schema'        => 1,
-				'Table'         => 1,
-				'TargetColumns' => 0,
-				'Operation'     => 1,
-				'FileType'      => 1,
-				'FileOptions'   => 0,
-				'InputFile'     => 1,
-				'InputColumns'  => 0,
-				'LogFile'       => 0,
-				'ImportOptions' => 0,
-				'LobPath'       => 0,
-				'XmlPath'       => 0,
-			      });
+                                'Schema'        => 1,
+                                'Table'         => 1,
+                                'TargetColumns' => 0,
+                                'Operation'     => 1,
+                                'FileType'      => 1,
+                                'FileOptions'   => 0,
+                                'InputFile'     => 1,
+                                'InputColumns'  => 0,
+                                'LogFile'       => 0,
+                                'ImportOptions' => 0,
+                                'LobPath'       => 0,
+                                'XmlPath'       => 0,
+                              });
 
     #
     # Construct an action string
     #
     my $action = "\U$params{Operation}\E INTO $params{Schema}.$params{Table}";
     if (defined $params{TargetColumns}) {
-	confess "Parameter 'TargetColumns' must be an array-reference"
-	  unless (ref $params{TargetColumns} eq 'ARRAY');
-	confess "Parameter 'TargetColumns' may not be empty array"
-	  unless (@{ $params{TargetColumns} });
-	$action .= " (" . join(', ', @{ $params{TargetColumns} }) . ')'; # FIXME: quoting
+        confess "Parameter 'TargetColumns' must be an array-reference"
+          unless (ref $params{TargetColumns} eq 'ARRAY');
+        confess "Parameter 'TargetColumns' may not be empty array"
+          unless (@{ $params{TargetColumns} });
+        $action .= " (" . join(', ', @{ $params{TargetColumns} }) . ')'; # FIXME: quoting
     }
     #print STDERR "XXX: Have import action string [$action]\n";
 
@@ -1071,58 +1071,58 @@ sub Import {
     my $file_options = '';
     my $fopts = { %{ $params{FileOptions} || {} } };
     foreach my $flag (qw(GeneratedIgnore GeneratedMissing
-			 IdentityIgnore IdentityMissing
-			 LobsInFile NoDefaults UseDefaults
-			)) {
-	my $set = delete $fopts->{$flag};
-	if ($set) {
-	    $file_options .= lc($flag) . ' ';
-	}
+                         IdentityIgnore IdentityMissing
+                         LobsInFile NoDefaults UseDefaults
+                        )) {
+        my $set = delete $fopts->{$flag};
+        if ($set) {
+            $file_options .= lc($flag) . ' ';
+        }
     }
     if ($params{FileType} eq 'DEL') {
-	my @opts = %$fopts;
-	validate(@opts, { 'CharDel'         => 0,
-			  'CodePage'        => 0,
-			  'ColDel'          => 0,
-			  'DateFormat'      => 0,
-			  'DelPriorityChar' => 0,
-			  'ImpliedDecimal'  => 0,
-			  'KeepBlanks'      => 0,
-			  'NoCharDel'       => 0,
-			  'StripTBlanks'    => 0,
-			  'TimeFormat'      => 0,
-			  'TimestampFormat' => 0,
-			});
-	#
-	# Boolean flags
-	#
-	foreach my $flag (qw(DelPriorityChar ImpliedDecimal
-			     KeepBlanks NoCharDel StripTBlanks)) {
-	    if ($fopts->{$flag}) { # Boolean, not mere presence
-		$file_options .= " \L$flag\E";
-	    }
-	}
-	#
-	# File options with a non-quoted value that use '=' as a separator
-	#
-	foreach my $opt (qw(CodePage)) {
-	    if (defined $fopts->{$opt}) {
-		my $value = $fopts->{$opt};
-		$file_options .= " \L$opt\E=$value";
-	    }
-	}
-	#
-	# File options with a quoted value that use '=' as a separator
-	#
-	foreach my $opt (qw(DateFormat TimeFormat TimestampFormat)) {
-	    if (defined $fopts->{$opt}) {
-		my $value = $fopts->{$opt};
-		if ($value =~ /"/) {
-		    confess "Invalid FileOptions '$opt' option value '$value' - cannot have embedded quotes";
-		}
-		$file_options .= " \L$opt\E=\"$value\"";
-	    }
-	}
+        my @opts = %$fopts;
+        validate(@opts, { 'CharDel'         => 0,
+                          'CodePage'        => 0,
+                          'ColDel'          => 0,
+                          'DateFormat'      => 0,
+                          'DelPriorityChar' => 0,
+                          'ImpliedDecimal'  => 0,
+                          'KeepBlanks'      => 0,
+                          'NoCharDel'       => 0,
+                          'StripTBlanks'    => 0,
+                          'TimeFormat'      => 0,
+                          'TimestampFormat' => 0,
+                        });
+        #
+        # Boolean flags
+        #
+        foreach my $flag (qw(DelPriorityChar ImpliedDecimal
+                             KeepBlanks NoCharDel StripTBlanks)) {
+            if ($fopts->{$flag}) { # Boolean, not mere presence
+                $file_options .= " \L$flag\E";
+            }
+        }
+        #
+        # File options with a non-quoted value that use '=' as a separator
+        #
+        foreach my $opt (qw(CodePage)) {
+            if (defined $fopts->{$opt}) {
+                my $value = $fopts->{$opt};
+                $file_options .= " \L$opt\E=$value";
+            }
+        }
+        #
+        # File options with a quoted value that use '=' as a separator
+        #
+        foreach my $opt (qw(DateFormat TimeFormat TimestampFormat)) {
+            if (defined $fopts->{$opt}) {
+                my $value = $fopts->{$opt};
+                if ($value =~ /"/) {
+                    confess "Invalid FileOptions '$opt' option value '$value' - cannot have embedded quotes";
+                }
+                $file_options .= " \L$opt\E=\"$value\"";
+            }
+        }
         #
         # File option with a value that has no separator
         #
@@ -1131,46 +1131,46 @@ sub Import {
                 $file_options .= " \L$opt\E$fopts->{$opt}";
             }
         }
-	#
-	# File option with special escape rules
-	#
-	if (defined $fopts->{CharDel}) {
-	    $file_options .= " chardel$fopts->{CharDel}";
-	    if ($fopts->{CharDel} eq '"' || $fopts->{CharDel} eq "'") {
-		$file_options .= $fopts->{CharDel};
-	    }
-	}
+        #
+        # File option with special escape rules
+        #
+        if (defined $fopts->{CharDel}) {
+            $file_options .= " chardel$fopts->{CharDel}";
+            if ($fopts->{CharDel} eq '"' || $fopts->{CharDel} eq "'") {
+                $file_options .= $fopts->{CharDel};
+            }
+        }
     } elsif ($params{FileType} eq 'IXF') {
-	confess "No file-type specific options supported for IXF files"
-	  if (keys %$fopts);
+        confess "No file-type specific options supported for IXF files"
+          if (keys %$fopts);
     } else {
-	confess "Unexpected file type '$params{FileType}'; expected 'DEL' or 'IXF'";
+        confess "Unexpected file type '$params{FileType}'; expected 'DEL' or 'IXF'";
     }
 
     #
     # Verify lob-related options
     #
     if (defined $params{FileOptions} && $params{FileOptions}{LobsInFile}) {
-	confess "LobsInFile file option requires LobPath parameter"
-	  unless (defined $params{LobPath});
+        confess "LobsInFile file option requires LobPath parameter"
+          unless (defined $params{LobPath});
     }
     if (defined $params{LobPath} &&
-	( !defined $params{FileOptions} ||
-	  !defined $params{FileOptions}{LobsInFile} )) {
-	confess "LobPath parameter requires LobsInFile file option";
+        ( !defined $params{FileOptions} ||
+          !defined $params{FileOptions}{LobsInFile} )) {
+        confess "LobPath parameter requires LobsInFile file option";
     }
 
     my $rc = db2Import($params{Database}, $action, $params{FileType},
-		       $params{InputFile},
-		       $params{InputColumns} || [],
-		       $params{LogFile} || "/dev/null",
-		       $file_options,
-		       $params{ImportOptions} || {},
-		       $params{LobPath}, # May be undef
-		       $params{XmlPath}, # May be undef
-		      );
+                       $params{InputFile},
+                       $params{InputColumns} || [],
+                       $params{LogFile} || _null_device(),
+                       $file_options,
+                       $params{ImportOptions} || {},
+                       $params{LobPath}, # May be undef
+                       $params{XmlPath}, # May be undef
+                      );
     if (! defined $rc) {
-	$class->_handle_error("Import");
+        $class->_handle_error("Import");
     }
     return $rc;
 }
@@ -1208,42 +1208,42 @@ sub Import {
 sub Load {
     my $class = shift;
     my %params = validate(@_, { 'Database'        => 1,
-				'Schema'          => 1,
-				'Table'           => 1,
-				'TargetColumns'   => 0,
-				'Operation'       => 1,
-				'SourceType'      => 1,
-				'FileLocation'    => 0, # Client / Server
-				'FileOptions'     => 0,
-				'InputFile'       => 0,
-				'InputStatement'  => 0,
-				'InputColumns'    => 0,
-				'CopyDirectory'   => 0,
-				'LogFile'         => 0,
-				'TempFilesPath'   => 0,
-				'LoadOptions'     => 0,
-				'DPFOptions'      => 0,
-				'ExceptionSchema' => 0,
-				'ExceptionTable'  => 0,
-				'LobPath'         => 0,
-				'XmlPath'         => 0,
-			      });
+                                'Schema'          => 1,
+                                'Table'           => 1,
+                                'TargetColumns'   => 0,
+                                'Operation'       => 1,
+                                'SourceType'      => 1,
+                                'FileLocation'    => 0, # Client / Server
+                                'FileOptions'     => 0,
+                                'InputFile'       => 0,
+                                'InputStatement'  => 0,
+                                'InputColumns'    => 0,
+                                'CopyDirectory'   => 0,
+                                'LogFile'         => 0,
+                                'TempFilesPath'   => 0,
+                                'LoadOptions'     => 0,
+                                'DPFOptions'      => 0,
+                                'ExceptionSchema' => 0,
+                                'ExceptionTable'  => 0,
+                                'LobPath'         => 0,
+                                'XmlPath'         => 0,
+                              });
 
     #
     # Construct an action string
     #
     my $action = "\U$params{Operation}\E INTO $params{Schema}.$params{Table}";
     if (defined $params{TargetColumns}) {
-	confess "Parameter 'TargetColumns' must be an array-reference"
-	  unless (ref $params{TargetColumns} eq 'ARRAY');
-	confess "Parameter 'TargetColumns' may not be empty array"
-	  unless (@{ $params{TargetColumns} });
-	$action .= " (" . join(', ', @{ $params{TargetColumns} }) . ')'; # FIXME: quoting
+        confess "Parameter 'TargetColumns' must be an array-reference"
+          unless (ref $params{TargetColumns} eq 'ARRAY');
+        confess "Parameter 'TargetColumns' may not be empty array"
+          unless (@{ $params{TargetColumns} });
+        $action .= " (" . join(', ', @{ $params{TargetColumns} }) . ')'; # FIXME: quoting
     }
     if (defined $params{ExceptionTable}) {
-	$params{ExceptionSchema} = $params{Schema}
-	  if (!defined $params{ExceptionSchema});
-	$action .= " FOR EXCEPTION $params{ExceptionSchema}.$params{ExceptionTable}";
+        $params{ExceptionSchema} = $params{Schema}
+          if (!defined $params{ExceptionSchema});
+        $action .= " FOR EXCEPTION $params{ExceptionSchema}.$params{ExceptionTable}";
     }
     #print STDERR "XXX: Have load action string [$action]\n";
 
@@ -1253,95 +1253,95 @@ sub Load {
     my $file_options = '';
     my $fopts = { %{ $params{FileOptions} || {} } };
     foreach my $flag (qw(AnyOrder
-			 GeneratedIgnore GeneratedMissing GeneratedOverride
-			 IdentityIgnore  IdentityMissing  IdentityOverride
-			 LobsInFile NoRowWarnings UseDefaults
-			)) {
-	my $set = delete $fopts->{$flag};
-	if ($set) {
-	    $file_options .= ' ' . lc($flag);
-	}
+                         GeneratedIgnore GeneratedMissing GeneratedOverride
+                         IdentityIgnore  IdentityMissing  IdentityOverride
+                         LobsInFile NoRowWarnings UseDefaults
+                        )) {
+        my $set = delete $fopts->{$flag};
+        if ($set) {
+            $file_options .= ' ' . lc($flag);
+        }
     }
     foreach my $opt (qw(IndexFreespace PageFreespace TotalFreespace)) {
-	my $value = delete $fopts->{$opt};
-	if (defined $value) {
-	    if ($value =~ /\S/) {
-		if ($value =~ /"/) {
-		    confess "Invalid FileOptions '$opt' option value '$value' - cannot have embedded blanks and quotes";
-		}
-		$value = "\"$value\"";
-	    }
-	    $file_options .= " \L$opt\E=$value";
-	}
+        my $value = delete $fopts->{$opt};
+        if (defined $value) {
+            if ($value =~ /\S/) {
+                if ($value =~ /"/) {
+                    confess "Invalid FileOptions '$opt' option value '$value' - cannot have embedded blanks and quotes";
+                }
+                $value = "\"$value\"";
+            }
+            $file_options .= " \L$opt\E=$value";
+        }
     }
 
     if ($params{SourceType} eq 'DEL') {
-	my @opts = %$fopts;
-	validate(@opts, { 'CharDel'           => 0,
-			  'CodePage'          => 0,
-			  'ColDel'            => 0,
-			  'DateFormat'        => 0,
-			  'DatesISO'          => 0,
-			  'DecPlusBlank'      => 0,
-			  'DecPt'             => 0,
-			  'DelPriorityChar'   => 0,
-			  'DumpFile'          => 0,
-			  'DumpFileAccessAll' => 0,
-			  'ImpliedDecimal'    => 0,
-			  'KeepBlanks'        => 0,
-			  'NoCharDel'         => 0,
-			  'TimeFormat'        => 0,
-			  'TimestampFormat'   => 0,
-			});
-	#
-	# Boolean flags
-	#
-	foreach my $flag (qw(DatesISO DecPlusBlank DelPriorityChar
-			     DumpFileAccessAll ImpliedDecimal KeepBlanks
-			     NoCharDel)) {
-	    if ($fopts->{$flag}) { # Boolean, not mere presence
-		$file_options .= " \L$flag\E";
-	    }
-	}
-	#
-	# File options with a value that use '=' as a separator - no
-	# quotes
-	#
-	foreach my $opt (qw(CodePage)) {
-	    if (defined $fopts->{$opt}) {
-		my $value = $fopts->{$opt};
-		$file_options .= " \L$opt\E=$value";
-	    }
-	}
-	#
-	# File options with a value that use '=' as a separator -
-	# optional quotes
-	#
-	foreach my $opt (qw(DumpFile)) {
-	    if (defined $fopts->{$opt}) {
-		my $value = $fopts->{$opt};
-		if ($value =~ /\s/) {
-		    if ($value =~ /"/) {
-			confess "Invalid FileOptions '$opt' option value '$value' - cannot have embedded blanks and quotes";
-		    }
-		    $value = "\"$value\"";
-		}
-		$file_options .= " \L$opt\E=$value";
-	    }
-	}
-	#
-	# File options with a value that use '=' as a separator -
-	# mandatory quotes
-	#
-	foreach my $opt (qw(DateFormat TimeFormat TimestampFormat)) {
-	    if (defined $fopts->{$opt}) {
-		my $value = $fopts->{$opt};
-		if ($value =~ /"/) {
-		    confess "Invalid FileOptions '$opt' option value '$value' - cannot have embedded quotes";
-		}
-		$file_options .= " \L$opt\E=\"$value\"";
-	    }
-	}
+        my @opts = %$fopts;
+        validate(@opts, { 'CharDel'           => 0,
+                          'CodePage'          => 0,
+                          'ColDel'            => 0,
+                          'DateFormat'        => 0,
+                          'DatesISO'          => 0,
+                          'DecPlusBlank'      => 0,
+                          'DecPt'             => 0,
+                          'DelPriorityChar'   => 0,
+                          'DumpFile'          => 0,
+                          'DumpFileAccessAll' => 0,
+                          'ImpliedDecimal'    => 0,
+                          'KeepBlanks'        => 0,
+                          'NoCharDel'         => 0,
+                          'TimeFormat'        => 0,
+                          'TimestampFormat'   => 0,
+                        });
+        #
+        # Boolean flags
+        #
+        foreach my $flag (qw(DatesISO DecPlusBlank DelPriorityChar
+                             DumpFileAccessAll ImpliedDecimal KeepBlanks
+                             NoCharDel)) {
+            if ($fopts->{$flag}) { # Boolean, not mere presence
+                $file_options .= " \L$flag\E";
+            }
+        }
+        #
+        # File options with a value that use '=' as a separator - no
+        # quotes
+        #
+        foreach my $opt (qw(CodePage)) {
+            if (defined $fopts->{$opt}) {
+                my $value = $fopts->{$opt};
+                $file_options .= " \L$opt\E=$value";
+            }
+        }
+        #
+        # File options with a value that use '=' as a separator -
+        # optional quotes
+        #
+        foreach my $opt (qw(DumpFile)) {
+            if (defined $fopts->{$opt}) {
+                my $value = $fopts->{$opt};
+                if ($value =~ /\s/) {
+                    if ($value =~ /"/) {
+                        confess "Invalid FileOptions '$opt' option value '$value' - cannot have embedded blanks and quotes";
+                    }
+                    $value = "\"$value\"";
+                }
+                $file_options .= " \L$opt\E=$value";
+            }
+        }
+        #
+        # File options with a value that use '=' as a separator -
+        # mandatory quotes
+        #
+        foreach my $opt (qw(DateFormat TimeFormat TimestampFormat)) {
+            if (defined $fopts->{$opt}) {
+                my $value = $fopts->{$opt};
+                if ($value =~ /"/) {
+                    confess "Invalid FileOptions '$opt' option value '$value' - cannot have embedded quotes";
+                }
+                $file_options .= " \L$opt\E=\"$value\"";
+            }
+        }
         #
         # File option with a value that has no separator
         #
@@ -1350,57 +1350,57 @@ sub Load {
                 $file_options .= " \L$opt\E$fopts->{$opt}";
             }
         }
-	#
-	# File option with special escape rules
-	#
-	if (defined $fopts->{CharDel}) {
-	    $file_options .= " chardel$fopts->{CharDel}";
-	    if ($fopts->{CharDel} eq '"' || $fopts->{CharDel} eq "'") {
-		$file_options .= $fopts->{CharDel};
-	    }
-	}
+        #
+        # File option with special escape rules
+        #
+        if (defined $fopts->{CharDel}) {
+            $file_options .= " chardel$fopts->{CharDel}";
+            if ($fopts->{CharDel} eq '"' || $fopts->{CharDel} eq "'") {
+                $file_options .= $fopts->{CharDel};
+            }
+        }
     } elsif ($params{SourceType} eq 'IXF') {
-	my @opts = %$fopts;
-	validate(@opts, { 'ForceIn'        => 0,
-			  'NoCheckLengths' => 0,
-			});
-	#
-	# Boolean flags
-	#
-	foreach my $flag (qw(ForceIn NoCheckLengths)) {
-	    if ($fopts->{$flag}) { # Boolean, not mere presence
-		$file_options .= " \L$flag\E";
-	    }
-	}
+        my @opts = %$fopts;
+        validate(@opts, { 'ForceIn'        => 0,
+                          'NoCheckLengths' => 0,
+                        });
+        #
+        # Boolean flags
+        #
+        foreach my $flag (qw(ForceIn NoCheckLengths)) {
+            if ($fopts->{$flag}) { # Boolean, not mere presence
+                $file_options .= " \L$flag\E";
+            }
+        }
     } elsif ($params{SourceType} ne 'Statement' &&
-	     $params{SourceType} ne 'SQL') {
-	confess "Unexpected file type '$params{SourceType}'; expected 'DEL' or 'IXF'";
+             $params{SourceType} ne 'SQL') {
+        confess "Unexpected file type '$params{SourceType}'; expected 'DEL' or 'IXF'";
     }
     #print STDERR "XXX: have file options string '$file_options'\n";
 
     my $source_list;
-    if ($params{SourceType} eq 'DEL' ||	$params{SourceType} eq 'IXF') {	
-	$source_list = $params{InputFile} ||
-	  confess "Parameter 'InputFile' required with SourceType '$params{SourceType}'";
+    if ($params{SourceType} eq 'DEL' || $params{SourceType} eq 'IXF') {
+        $source_list = $params{InputFile} ||
+          confess "Parameter 'InputFile' required with SourceType '$params{SourceType}'";
     } elsif ($params{SourceType} eq 'Statement' ||
-	     $params{SourceType} eq 'SQL') {
-	$source_list = $params{InputStatement} ||
-	  confess "Parameter 'InputStatement' required with SourceType '$params{SourceType}'";
+             $params{SourceType} eq 'SQL') {
+        $source_list = $params{InputStatement} ||
+          confess "Parameter 'InputStatement' required with SourceType '$params{SourceType}'";
     } else {
-	confess "Unexpected SourceType '$params{SourceType}'";
+        confess "Unexpected SourceType '$params{SourceType}'";
     }
 
     #
     # Input columns are names for IXF files and column numbers for DEL files
     #
     if (defined $params{InputColumns}) {
-	confess "Parameter 'InputColumns' must be an array-reference"
-	  unless (ref $params{InputColumns} eq 'ARRAY');
-	confess "Parameter 'InputColumns' requires SourceType 'IXF' / 'DEL'"
-	  unless ($params{SourceType} eq 'IXF' ||
-		  $params{SourceType} eq 'DEL');
-	confess "Parameter 'InputColumns' may not be empty array"
-	  unless (@{ $params{InputColumns} });
+        confess "Parameter 'InputColumns' must be an array-reference"
+          unless (ref $params{InputColumns} eq 'ARRAY');
+        confess "Parameter 'InputColumns' requires SourceType 'IXF' / 'DEL'"
+          unless ($params{SourceType} eq 'IXF' ||
+                  $params{SourceType} eq 'DEL');
+        confess "Parameter 'InputColumns' may not be empty array"
+          unless (@{ $params{InputColumns} });
     }
 
     my $copy_list = $params{CopyDirectory} || '';
@@ -1409,35 +1409,35 @@ sub Load {
     # Verify lob-related options
     #
     if (defined $params{FileOptions} && $params{FileOptions}{LobsInFile}) {
-	confess "LobsInFile file option requires LobPath parameter"
-	  unless (defined $params{LobPath});
+        confess "LobsInFile file option requires LobPath parameter"
+          unless (defined $params{LobPath});
     }
     if (defined $params{LobPath} &&
-	( !defined $params{FileOptions} ||
-	  !defined $params{FileOptions}{LobsInFile} )) {
-	confess "LobPath parameter requires LobsInFile file option";
+        ( !defined $params{FileOptions} ||
+          !defined $params{FileOptions}{LobsInFile} )) {
+        confess "LobPath parameter requires LobsInFile file option";
     }
 
     my ($rc, $rc_dpf) = db2Load($params{Database},
-				$action,
-				$params{InputColumns} || [],
-				$params{SourceType},
-				$params{FileLocation} || 'Client', # MediaType
-				$source_list,
-				$copy_list,
-				$params{LogFile} || '/dev/null',
-				$params{TempFilesPath} || '',
-				$file_options,
-				$params{LoadOptions} || {},
-				$params{DPFOptions}, # May be undef
-				$params{LobPath}, # May be undef
-				$params{XmlPath}, # May be undef
-			       );
+                                $action,
+                                $params{InputColumns} || [],
+                                $params{SourceType},
+                                $params{FileLocation} || 'Client', # MediaType
+                                $source_list,
+                                $copy_list,
+                                $params{LogFile} || _null_device(),
+                                $params{TempFilesPath} || '',
+                                $file_options,
+                                $params{LoadOptions} || {},
+                                $params{DPFOptions}, # May be undef
+                                $params{LobPath}, # May be undef
+                                $params{XmlPath}, # May be undef
+                               );
     if (! defined $rc) {
-	$class->_handle_error("Load");
+        $class->_handle_error("Load");
     }
     if (wantarray) {
-	return ($rc, $rc_dpf);
+        return ($rc, $rc_dpf);
     }
     return $rc;
 }
@@ -1448,20 +1448,19 @@ sub Load {
 #
 sub LoadQuery {
     my $class = shift;
-    my %params = validate(@_, { 'Database' => 1,
-				'Schema'   => 1,
-				'Table'    => 1,
-				'LogFile'  => 1,
-				'Messages' => 1,
-			      });
-    my ($dbname, $schema, $table, $logfile, $msg_type) =
-      @params{qw(Database Schema Table LogFile Messages)};
+    my %params = validate(@_, { 'Schema'   => 1,
+                                'Table'    => 1,
+                                'LogFile'  => 1,
+                                'Messages' => 1,
+                              });
+    my ($schema, $table, $logfile, $msg_type) =
+      @params{qw(Schema Table LogFile Messages)};
     confess "Invalid 'Messages' specification '$msg_type' - must be one of 'All', 'None' or 'New'"
       unless ($msg_type =~ /^(?:All|None|New)$/);
 
-    my $rc = db2LoadQuery($dbname, "$schema.$table", $msg_type, $logfile);
+    my $rc = db2LoadQuery("$schema.$table", $msg_type, $logfile);
     if (! defined $rc) {
-	$class->_handle_error("LoadQuery");
+        $class->_handle_error("LoadQuery");
     }
     return $rc;
 }
@@ -1473,10 +1472,10 @@ sub LoadQuery {
 sub Rebind {
     my $class = shift;
     my %params = validate(@_, { 'Database' => 1,
-				'Schema'   => 0,
-				'Package'  => 1,
-				'Options'  => 0,
-			      });
+                                'Schema'   => 0,
+                                'Package'  => 1,
+                                'Options'  => 0,
+                              });
     my ($dbname, $schema, $package, $options) =
       @params{qw(Database Schema Package Options)};
     $package = "$schema.$package" if (defined $schema);
@@ -1484,7 +1483,7 @@ sub Rebind {
 
     my $rc = sqlarbnd($dbname, $package, $options);
     if (! defined $rc) {
-	$class->_handle_error("Rebind");
+        $class->_handle_error("Rebind");
     }
     return $rc;
 }
@@ -1504,10 +1503,10 @@ sub Rebind {
 sub ListHistory {
     my $class = shift;
     my %params = validate(@_, { 'Database'   => 1,
-				'Action'     => 0,
-				'ObjectName' => 0,
-				'StartTime'  => 0,
-			      });
+                                'Action'     => 0,
+                                'ObjectName' => 0,
+                                'StartTime'  => 0,
+                              });
     my ($db_name, $action, $obj_name, $start_time) =
       @params{qw(Database Action ObjectName StartTime)};
     $action ||= 'All';
@@ -1516,8 +1515,8 @@ sub ListHistory {
 
     my $rc = db2ListHistory($db_name, $action, $obj_name, $start_time);
     if (! defined $rc) {
-	$class->_handle_error("ListHistory");
-	return;
+        $class->_handle_error("ListHistory");
+        return;
     }
     return @$rc;
 }
@@ -1529,35 +1528,40 @@ sub ListHistory {
 #
 sub ListUtilities {
     my $class = shift;
-    my %params = validate(@_, { 'Database' => 0, });
-    my ($db_name) = @params{qw(Database)};
+    my %params = validate(@_, { 'Database' => 0,
+                                'Version'  => 0,
+                              });
+    $params{Version} ||= 'SQLM_CURRENT_VERSION';
+    my ($db_name, $version) = @params{qw(Database Version)};
 
     #
     # Get an instance snapshot and check the listed utilities
     #
     my @retval;
-    my $info = DB2::Admin::->GetSnapshot('Subject' => 'SQLMA_DB2');
+    my $info = DB2::Admin::->GetSnapshot('Subject' => 'SQLMA_DB2',
+                                         'Version' => $version,
+                                        );
     foreach my $util_node ($info->findNodes('DB2/UTILITY')) {
-	my $util_db_name = $util_node->findValue('UTILITY_DBNAME');
-	$util_db_name =~ s/\s+$//;
-	next if (defined $db_name && lc $util_db_name ne lc $db_name);
+        my $util_db_name = $util_node->findValue('UTILITY_DBNAME');
+        $util_db_name =~ s/\s+$//;
+        next if (defined $db_name && lc $util_db_name ne lc $db_name);
 
-	my $start_ctime = $util_node->findValue('UTILITY_START_TIME/SECONDS');
-	push @retval,
-	  { 'Database'     => $util_db_name,
-	    'ID'           => $util_node->findValue('UTILITY_ID'),
-	    'Utility'      => $util_node->findValue('UTILITY_TYPE'),
-	    'Priority'     => $util_node->findValue('UTILITY_PRIORITY'),
-	    'Description'  => $util_node->findValue('UTILITY_DESCRIPTION'),
-	    'StartTime'    => scalar(localtime $start_ctime),
-	    'StartTimeVal' => $start_ctime,
-	  };
+        my $start_ctime = $util_node->findValue('UTILITY_START_TIME/SECONDS');
+        push @retval,
+          { 'Database'     => $util_db_name,
+            'ID'           => $util_node->findValue('UTILITY_ID'),
+            'Utility'      => $util_node->findValue('UTILITY_TYPE'),
+            'Priority'     => $util_node->findValue('UTILITY_PRIORITY'),
+            'Description'  => $util_node->findValue('UTILITY_DESCRIPTION'),
+            'StartTime'    => scalar(localtime $start_ctime),
+            'StartTimeVal' => $start_ctime,
+          };
 
-	#
-	# NOTE: We're not including the various phase / progress
-	#       elements.  It would be simple to add these, but
-	#       I'm not sure anyone would care...
-	#
+        #
+        # NOTE: We're not including the various phase / progress
+        #       elements.  It would be simple to add these, but
+        #       I'm not sure anyone would care...
+        #
     }
 
     return @retval;
@@ -1580,13 +1584,13 @@ sub ListUtilities {
 sub Runstats {
     my $class = shift;
     my %params = validate(@_, { 'Database' => 1,
-				'Schema'   => 1,
-				'Table'    => 1,
-				'Columns'  => 0,
-				'Indexes'  => 0,
-				'Options'  => 0,
-			      },
-			 );
+                                'Schema'   => 1,
+                                'Table'    => 1,
+                                'Columns'  => 0,
+                                'Indexes'  => 0,
+                                'Options'  => 0,
+                              },
+                         );
 
     #
     # If the indexes are specified, add the default schema name
@@ -1594,8 +1598,8 @@ sub Runstats {
     #
     my @indexes = (defined $params{Indexes} ? @{ $params{Indexes} } : ());
     foreach my $index (@indexes) {
-	next if ($index =~ /\w\.\w/); # FIXME: better parsing for bizarre names
-	$index = "$params{Schema}.$index";
+        next if ($index =~ /\w\.\w/); # FIXME: better parsing for bizarre names
+        $index = "$params{Schema}.$index";
     }
 
     my $table = "$params{Schema}.$params{Table}"; # FIXME: better quoting
@@ -1604,8 +1608,8 @@ sub Runstats {
 
     my $rc = db2Runstats($params{Database}, $table, $options, $columns, \@indexes);
     if ($rc) {
-	$class->_handle_error("Runstats");
-	return;
+        $class->_handle_error("Runstats");
+        return;
     }
     return 1;
 }
@@ -1630,12 +1634,12 @@ sub Runstats {
 sub ClientInfo {
     my $class = shift;
     my %params = validate(@_, { 'Database'         => 0,
-				'ClientUserid'     => 0,
-				'Workstation'      => 0,
-				'Application'      => 0,
-				'AccountingString' => 0,
-			      },
-			 );
+                                'ClientUserid'     => 0,
+                                'Workstation'      => 0,
+                                'Application'      => 0,
+                                'AccountingString' => 0,
+                              },
+                         );
     my $dbname = delete $params{Database} || '';
     my $retval = db2ClientInfo($dbname, \%params);
     return %$retval;
@@ -1670,18 +1674,18 @@ sub ClientInfo {
 sub Backup {
     my $class = shift;
     my %params = validate(@_, { 'Database'    => 1,
-				'Target'      => 1,
-				'Tablespaces' => 0,
-				'Options'     => HASHREF,
-			      },
-			 );
+                                'Target'      => 1,
+                                'Tablespaces' => 0,
+                                'Options'     => HASHREF,
+                              },
+                         );
 
     #
     # The XS code expects a reference to an array; we support either
     # a string or an array, and we translate this at the perl level.
     #
     unless (ref $params{Target}) {
-	$params{Target} = [ $params{Target} ];
+        $params{Target} = [ $params{Target} ];
     }
 
     #
@@ -1697,10 +1701,10 @@ sub Backup {
     $options->{Online} ||= 0;
 
     my $rc = db2Backup($params{Database},
-		       $params{Target},
-		       $params{Tablespaces},
-		       $params{Options},
-		      );
+                       $params{Target},
+                       $params{Tablespaces},
+                       $params{Options},
+                      );
     $class->_handle_error("Backup");
     return $rc;
 }
@@ -1715,7 +1719,7 @@ sub _handle_error {
     my ($class, $label) = @_;
 
     my $code = sqlcode();
-    return if ($code == 0);	# No error
+    return if ($code == 0);     # No error
     my $level = ($code > 0 ? 'Warning' :'Error');
     my $errmsg = sqlaintp() || '(no error message available)';
     $errmsg =~ s!\s*$!!;
@@ -1727,10 +1731,10 @@ sub _handle_error {
     # Handle PrintError/PrintWarning and RaiseError/RaiseWarning
     #
     if ($options{'Print' . $level}) {
-	warn $msg;
+        warn $msg;
     }
     if ($options{'Raise' . $level}) {
-	die $msg;
+        die $msg;
     }
     return $msg;
 }
@@ -1745,8 +1749,8 @@ sub _decode_attach_info {
 
     my $retval = {};
     @{$retval}{qw(Country CodePage AuthId NodeName ServerId
-		  AgentId AgentIndex NodeNum Partitions)} =
-		    split chr(0xff), $info;
+                  AgentId AgentIndex NodeNum Partitions)} =
+                    split chr(0xff), $info;
     return $retval;
 }
 
@@ -1763,21 +1767,21 @@ sub _decode_monitor_switches {
 
     my $retval = {};
     my %map = ('BUFFPOOL_SW'  => 'BufferPool',
-	       'LOCK_SW'      => 'Lock',
-	       'SORT_SW'      => 'Sort',
-	       'STATEMENT_SW' => 'Statement',
-	       'TABLE_SW'     => 'Table',
-	       'TIMESTAMP_SW' => 'Timestamp', # DB2 V8
-	       'UOW_SW'       => 'UOW',
-	      );
+               'LOCK_SW'      => 'Lock',
+               'SORT_SW'      => 'Sort',
+               'STATEMENT_SW' => 'Statement',
+               'TABLE_SW'     => 'Table',
+               'TIMESTAMP_SW' => 'Timestamp',
+               'UOW_SW'       => 'UOW',
+              );
     foreach my $node ($switch_list->getChildnodes()) {
-	next unless ($node->isa("DB2::Admin::DataStream"));
+        next unless ($node->isa("DB2::Admin::DataStream"));
         my $value = $node->findValue('OUTPUT_STATE');
         next unless (defined $value);
         my $elem_name = $node->getName();
-	my $key = $map{$elem_name} ||
-	  confess "Unknown monitor switch [$elem_name]";
-	$retval->{$key} = $value;
+        my $key = $map{$elem_name} ||
+          confess "Unknown monitor switch [$elem_name]";
+        $retval->{$key} = $value;
     }
     return $retval;
 }
@@ -1800,20 +1804,20 @@ sub _decode_monitor_switches {
 #   - Computed (optional, V9.1)
 #
 my %type_sizes = ('16bit'  => 2,
-		  'u16bit' => 2,
-		  '32bit'  => 4,
-		  'u32bit' => 4,
-		  'float'  => 4,
-		  '64bit'  => 8,
-		  'u64bit' => 8,
-		 );
+                  'u16bit' => 2,
+                  '32bit'  => 4,
+                  'u32bit' => 4,
+                  'float'  => 4,
+                  '64bit'  => 8,
+                  'u64bit' => 8,
+                 );
 sub _get_config_params {
     my $class = shift;
     my %params = validate(@_, { 'Param'    => 1,
-				'Flag'     => 0,
-				'Version'  => 0,
-				'Database' => 0,
-			      });
+                                'Flag'     => 0,
+                                'Version'  => 0,
+                                'Database' => 0,
+                              });
 
     my $names = $params{Param};
     $names = [ $names ] unless (ref $names);
@@ -1839,35 +1843,35 @@ sub _get_config_params {
     #
     my ($domain, $database) = ('Manager', '');
     if (defined $params{Database}) {
-	$domain = 'Database';
-	$database = $params{Database};
+        $domain = 'Database';
+        $database = $params{Database};
     }
 
     my $params = [];
     my @info;
     foreach my $elem (@$names) {
-	my $info = DB2::Admin::Constants::->
-	  GetConfigParam('Name'   => $elem,
-			 'Domain' => $domain);
-	confess "Invalid $domain config parameter '$elem'"
-	  unless (defined $info);
+        my $info = DB2::Admin::Constants::->
+          GetConfigParam('Name'   => $elem,
+                         'Domain' => $domain);
+        confess "Invalid $domain config parameter '$elem'"
+          unless (defined $info);
 
-	my $token = DB2::Admin::Constants::->GetValue($info->{Constant});
-	my $entry = { 'Token' => $token };
-	if ($info->{Type} eq 'string') {
-	    $entry->{Size} = $info->{'Length'} ||
-	      confess "No length specified for string constant [$elem] [$info->{Name}]";
-	    $entry->{Size} += 1; # Allow DB2 to write terminating zero
-	} else {
-	    $entry->{Size} = $type_sizes{ $info->{Type} } ||
-	      confess "No size known for type [$info->{Type}] and constant [$elem] [$info->{Name}]";
-	}
-	push @$params, $entry;
-	push @info, { 'Token' => $token,
-		      'Type'  => $info->{Type},
-		      'Name'  => $elem,
-		      'Size'  => $entry->{Size},
-		    };
+        my $token = DB2::Admin::Constants::->GetValue($info->{Constant});
+        my $entry = { 'Token' => $token };
+        if ($info->{Type} eq 'string') {
+            $entry->{Size} = $info->{'Length'} ||
+              confess "No length specified for string constant [$elem] [$info->{Name}]";
+            $entry->{Size} += 1; # Allow DB2 to write terminating zero
+        } else {
+            $entry->{Size} = $type_sizes{ $info->{Type} } ||
+              confess "No size known for type [$info->{Type}] and constant [$elem] [$info->{Name}]";
+        }
+        push @$params, $entry;
+        push @info, { 'Token' => $token,
+                      'Type'  => $info->{Type},
+                      'Name'  => $elem,
+                      'Size'  => $entry->{Size},
+                    };
     }
 
     #
@@ -1875,22 +1879,22 @@ sub _get_config_params {
     #
     $flags->{$domain} = 1;
     my $results = db2CfgGet($params, $flags, $database, $db2_version);
-    return unless ($results);	# Caller does error handling
+    return unless ($results);   # Caller does error handling
 
     my $retval = [];
     foreach my $entry (@$results) {
-	my $info = shift @info;
+        my $info = shift @info;
 
-	confess "Token does not match (entry $entry->{Token}, info $info->{Token})"
-	  unless ($entry->{Token} == $info->{Token});
-	my $elem =  { 'Name'  => $info->{Name} };
-	$elem->{Value} = DB2::Admin::DataElement::->
-	  Decode($info->{Type}, $entry->{Value}, $info->{Size});
-	foreach my $flag (qw(Automatic Computed)) {
-	    $elem->{$flag} = $entry->{$flag}
-	      if (defined $entry->{$flag});
-	}
-	push @$retval, $elem;
+        confess "Token does not match (entry $entry->{Token}, info $info->{Token})"
+          unless ($entry->{Token} == $info->{Token});
+        my $elem =  { 'Name'  => $info->{Name} };
+        $elem->{Value} = DB2::Admin::DataElement::->
+          Decode($info->{Type}, $entry->{Value}, $info->{Size});
+        foreach my $flag (qw(Automatic Computed)) {
+            $elem->{$flag} = $entry->{$flag}
+              if (defined $entry->{$flag});
+        }
+        push @$retval, $elem;
     }
     return $retval;
 }
@@ -1916,10 +1920,10 @@ sub _get_config_params {
 sub _set_config_params {
     my $class = shift;
     my %params = validate(@_, { 'Param'    => 1,
-				'Flag'     => 0,
-				'Version'  => 0,
-				'Database' => 0,
-			      });
+                                'Flag'     => 0,
+                                'Version'  => 0,
+                                'Database' => 0,
+                              });
 
     my $vals = $params{Param};
     confess "Invalid 'Param' parameters: must be hash ref or array ref of hash refs"
@@ -1945,42 +1949,42 @@ sub _set_config_params {
     #
     my ($domain, $database) = ('Manager', '');
     if (defined $params{Database}) {
-	$domain = 'Database';
-	$database = $params{Database};
+        $domain = 'Database';
+        $database = $params{Database};
     }
 
     my $params = [];
     foreach my $elem (@$vals) {
-	#
-	# - Flag 'Immediate' / 'Delayed': value must be present
-	# - Flag 'Reset': value may not be present
-	#
-	unless (defined $elem->{Name}) {
-	    confess "Invalid config parameter: required field 'Name' missing";
-	}
-	if (!$flags->{'Reset'} && !defined $elem->{Value}) {
-	    confess "Invalid config parameter with name '$elem->{Name}': required field 'Value' missing";
-	} elsif ($flags->{'Reset'} && defined $elem->{Value}) {
-	    confess "Invalid config parameter with name '$elem->{Name}': field 'Value' not allowed with flag 'Reset'";
-	}
+        #
+        # - Flag 'Immediate' / 'Delayed': value must be present
+        # - Flag 'Reset': value may not be present
+        #
+        unless (defined $elem->{Name}) {
+            confess "Invalid config parameter: required field 'Name' missing";
+        }
+        if (!$flags->{'Reset'} && !defined $elem->{Value}) {
+            confess "Invalid config parameter with name '$elem->{Name}': required field 'Value' missing";
+        } elsif ($flags->{'Reset'} && defined $elem->{Value}) {
+            confess "Invalid config parameter with name '$elem->{Name}': field 'Value' not allowed with flag 'Reset'";
+        }
 
-	my $info = DB2::Admin::Constants::->
-	  GetConfigParam('Name'   => $elem->{Name},
-			 'Domain' => $domain);
-	confess "Invalid $domain config parameter '$elem->{Name}'"
-	  unless (defined $info);
-	confess "$domain config parameter '$elem->{Name}' is not updatable"
-	  unless ($info->{Updatable});
+        my $info = DB2::Admin::Constants::->
+          GetConfigParam('Name'   => $elem->{Name},
+                         'Domain' => $domain);
+        confess "Invalid $domain config parameter '$elem->{Name}'"
+          unless (defined $info);
+        confess "$domain config parameter '$elem->{Name}' is not updatable"
+          unless ($info->{Updatable});
 
-	my $token = DB2::Admin::Constants::->GetValue($info->{Constant});
-	my $entry = { 'Token' => $token };
-	my $binary_value = DB2::Admin::DataElement::->
-	  Encode($info->{Type}, $elem->{Value});
-	$entry->{Value} = $binary_value;
-	foreach my $fld (qw(Automatic Computed Manual)) {
-	    $entry->{$fld} = 1 if ($elem->{$fld});
-	}
-	push @$params, $entry;
+        my $token = DB2::Admin::Constants::->GetValue($info->{Constant});
+        my $entry = { 'Token' => $token };
+        my $binary_value = DB2::Admin::DataElement::->
+          Encode($info->{Type}, $elem->{Value});
+        $entry->{Value} = $binary_value;
+        foreach my $fld (qw(Automatic Computed Manual)) {
+            $entry->{$fld} = 1 if ($elem->{$fld});
+        }
+        push @$params, $entry;
     }
 
     #
@@ -1992,6 +1996,17 @@ sub _set_config_params {
 
 
 #
+# Return the platform-specific null device
+#
+sub _null_device {
+    if ($^O =~ /^MSWin/) {
+        return 'nul:';
+    }
+    return '/dev/null';
+}
+
+
+#
 # Cleanup when done
 #
 END {
@@ -1999,7 +2014,7 @@ END {
 }
 
 
-1;				# End on a positive note
+1;                              # End on a positive note
 
 
 __END__
@@ -2066,7 +2081,7 @@ DB2::Admin - Support for DB2 Administrative API from perl
   DB2::Admin::->UncatalogDatabase('Alias' => 'TESTPRI');
 
   # Catalog or uncatalog a node
-  DB2::Admin::->CatalogNode('Protocol'    => 'TCP/IP',	# Or SOCKS/Local
+  DB2::Admin::->CatalogNode('Protocol'    => 'TCP/IP',  # Or SOCKS/Local
                             'NodeName'    => 'TESTNODE',
                             'HostName'    => 'testhost.example.com',
                             'ServiceName' => 3700); # Service name or port number
@@ -2099,32 +2114,30 @@ DB2::Admin - Support for DB2 Administrative API from perl
 
   # Export data.  Requires a database connection.  Example omits options.
   DB2::Admin->Export('Database'   => $db_name,
-		     'Schema'     => $schema_name,
-		     'Table'      => $table_name,
-		     'OutputFile' => "/var/tmp/data-$schema_name-$table_name.del",
-		     'FileType'   => 'DEL');
+                     'Schema'     => $schema_name,
+                     'Table'      => $table_name,
+                     'OutputFile' => "/var/tmp/data-$schema_name-$table_name.del",
+                     'FileType'   => 'DEL');
 
   # Import data.  Requires a database connection.  Example omits options.
   DB2::Admin->Import('Database'   => $db_name,
-		     'Schema'     => $schema_name,
-		     'Table'      => $table_name,
-		     'InputFile'  => "/var/tmp/data-$schema_name-$table_name.del",
+                     'Schema'     => $schema_name,
+                     'Table'      => $table_name,
+                     'InputFile'  => "/var/tmp/data-$schema_name-$table_name.del",
                      'Operation'  => 'Insert',
-		     'FileType'   => 'DEL');
+                     'FileType'   => 'DEL');
 
   # Load data.  Requires a database connection.  Example omits options.
-  # The 'Load' and 'LoadQuery' commands require DB2 V8.2
   my $rc = DB2::Admin->Load('Database'   => $db_name,
-	                    'Schema'     => $schema_name,
-   	                    'Table'      => $table_name,
-	                    'InputFile'  => "/var/tmp/data-$schema_name-$table_name.del",
+                            'Schema'     => $schema_name,
+                            'Table'      => $table_name,
+                            'InputFile'  => "/var/tmp/data-$schema_name-$table_name.del",
                             'Operation'  => 'Insert',
                             'SourceType' => 'DEL');
-  my $state = DB2::Admin->LoadQuery('Database' => $db_name,
-		                    'Schema'   => $schema_name,
-				    'Table'    => $table_name,
-				    'LogFile'  => $logfile,
-				    'Messages' => 'All');
+  my $state = DB2::Admin->LoadQuery('Schema'   => $schema_name,
+                                    'Table'    => $table_name,
+                                    'LogFile'  => $logfile,
+                                    'Messages' => 'All');
 
   # Run table statistics.  Requires a database connection.  Example
   # omits options.
@@ -2146,7 +2159,7 @@ DB2::Admin - Support for DB2 Administrative API from perl
 
   # Rebind a package.  Requires a database connection. Example omits options.
   DB2::Admin->Rebind('Database' => $db_name,
-		     'Schema'   => $schema_name,
+                     'Schema'   => $schema_name,
                      'Package'  => $pkg_name);
 
   # Backup a database (or database partition)
@@ -2276,8 +2289,6 @@ keywords:
 The name under which the database connection will be listed in the DB2
 "list applications" command, DB2 snapshots, etc.  The default is the
 perl script name (the basename of C<$0>).
-
-This attribute is silently ignored on DB2 V7.2.
 
 =item ConnectTimeout
 
@@ -2423,8 +2434,6 @@ method.
 =item Sort
 
 =item Timestamp
-
-The C<TimeStamp> key is only available for DB2 V8 and later.
 
 =back
 
@@ -2647,8 +2656,8 @@ This method returns true on success and false on failure.
 
 This method is used to inquire database manager configuration
 parameters.  The parameters supported are taken from a configuration
-file, C<DB2::Admin/db2_config_params.pl>, which is complete for database
-configuration parameters up to DB2 release V8.1.
+file, C<DB2::Admin/db2_config_params.pl>, which is complete for
+database configuration parameters up to DB2 release V9.7.
 
 Querying delayed and default database parameters does not require an
 instance attach or database connection.  Querying current database
@@ -2686,7 +2695,7 @@ the results matches the order specified in the C<Name> parameter.
 This method is used to update database manager configuration
 parameters.  The parameters supported are taken from a configuration
 file, C<DB2::Admin/db2_config_params.pl>, which is complete for database
-configuration parameters up to DB2 release V8.1.
+configuration parameters up to DB2 release V9.7.
 
 Updating delayed and default database parameters does not require an
 instance attach or database connection.  Updating current database
@@ -2818,8 +2827,7 @@ its desired authentication method as part of the connection handshake.
 Setting the authentication in the database to a value conflicting with
 that at the database server will cause the client to fail to connect.
 
-The following values are supported (some values are only supported in
-DB2 V8.2):
+The following values are supported:
 
 =over 4
 
@@ -3155,7 +3163,7 @@ This mandatory parameter specifies the name of the output file.
 
 This optional parameter specifies the name of the error log file.
 This file is appended to when it already exists.  If omitted, the log
-goes to C</dev/null>.
+goes to C</dev/null> or C<nul:>.
 
 =item LobPath
 
@@ -3402,15 +3410,12 @@ column names in the target table are to be loaded.
 
 This optional parameter specifies the name of the error log file.
 This file is appended to when it already exists.  If omitted, the log
-goes to C</dev/null>.
+goes to C</dev/null> or C<nul:>.
 
 =item ImportOptions
 
 An optional hash reference with import options (those affecting the
-import operation itself, not describing the input file).  The fields
-supported depend on the DB2 release; DB2 releases prior to V8.2 only
-support C<CommitCount> and C<RestartCount>, and do not support
-C<CommitCount> 'Automatic'.
+import operation itself, not describing the input file).
 
 =over 4
 
@@ -3429,8 +3434,7 @@ Functionally identical to C<RestartCount>
 
 =item CommitCount
 
-How often import should commit.  For DB2 V8.2, the default is
-'Automatic'.
+How often import should commit.  The default is 'Automatic'.
 
 =item WarningCount
 
@@ -3543,10 +3547,10 @@ enabled.
 =item *
 
 If the load is marked as non-recoverable, it is not subject to use
-restrictions once the load completes, but the table will be
+restrictions once the load completes.  However, the table will be
 unavailable if the database is restarted before a backup is taken.
-This is different from Sybase, where the table will be available in the
-pre-load state.
+This is different from Sybase, where the table will be available in
+the pre-load state.
 
 =item *
 
@@ -3555,6 +3559,13 @@ data must be copied by the server (see the C<CopyDirectory> argument),
 or a database or tablespace backup must be performed by the DBAs.  If
 this is not done, the table may be put in a mode where data can be
 read but not updated.
+
+=item *
+
+If the load fails, a follow-up command may have to be issues to
+continue or terminate the load.  This command is I<not> issued
+automatically, because there are cases where terminating a partially
+failed load will make things worse (e.g. force index rebuilds).
 
 =back
 
@@ -3817,7 +3828,7 @@ should be a boolean: make a copy yes/no.
 
 This optional parameter specifies the name of the error log file.
 This file is appended to when it already exists.  If omitted, the log
-goes to C</dev/null>.
+goes to C</dev/null> or C<nul:>.
 
 If you are loading into a partitioned (DPF) database, this file will
 be the basename; additional details will be found in files with the
@@ -4119,17 +4130,12 @@ keys:
 
 This method is used to query the state of a load against a database
 table.  It indicates the state of the table, the load phase, row
-counts, and messages.  It requires a database connection.
+counts, and messages.  It requires a database connection; the database
+name itself is not specified as a parameter.
 
 This method takes the following named parameters, all mandatory:
 
 =over 4
-
-=item Database
-
-The database name.  This parameter is required.  A connection to this
-database must exist, i.e. the C<Connect> method must have been called
-for this database.
 
 =item Schema
 
@@ -4167,8 +4173,7 @@ failure.
 =head2 Runstats
 
 This method is used to collect statistics for a table and/or its
-indexes.  This method requires DB2 V8.  This method requires a
-database connection.
+indexes.  This method requires a database connection.
 
 At this time, only a subset of runstats features have been
 implemented; specifically, the column distribution options and columns
@@ -4199,8 +4204,6 @@ mixture of flags (boolean values) and numerical values, as described
 below.  Not every flag and option can be meaningfully combined with
 other flags and options; invalid combinations will lead to a DB2
 error (the perl API does not check this).
-
-Many options are only available in DB2 V8.2 and later.
 
 =over 4
 
@@ -4257,8 +4260,7 @@ This numerical option enables Bernoulli sampling on the table data.
 This is the default sampling method (the other is 'SystemSampling').
 The option value must be a percentage value (between 0 and 100).
 
-This option is mutually exclusive with 'SystemSampling'.  It is only
-available with DB2 V8.2 and later.
+This option is mutually exclusive with 'SystemSampling'.
 
 =item SystemSampling
 
@@ -4267,8 +4269,7 @@ is the alternative sampling method (the default is
 'BernoulliSampling').  The option value must be a percentage value
 (between 0 and 100).
 
-This option is mutually exclusive with 'BernoulliSampling'.  It is
-only available with DB2 V8.2 and later.
+This option is mutually exclusive with 'BernoulliSampling'.
 
 =item Repeatable
 
@@ -4276,15 +4277,11 @@ This numerical option is used to make sampling of the table data
 repeatable.  The option value is the sampling seed.  This option can
 be combined with 'BernoulliSampling' or 'SystemSampling'.
 
-This option is only available with DB2 V8.2 and later.
-
 =item UseProfile
 
 This boolean option is used to collect statistics depending on a
 previously defined statistics profile for the table.  When specified,
 the other options are ignore.
-
-This option is only available with DB2 V8.2 and later.
 
 =item SetProfile
 
@@ -4292,15 +4289,11 @@ This boolean option is used to collect statistics and then set the
 statistics profile.  Future Runstats calls with the 'UseProfile'
 option will re-use the current statistics settings.
 
-This option is only available with DB2 V8.2 and later.
-
 =item SetProfileOnly
 
 This boolean option is used to set the statistics profile without
 actually collecting data.  Future Runstats calls with the
 'UseProfile' option will re-use the current statistics settings.
-
-This option is only available with DB2 V8.2 and later.
 
 =item UpdateProfile
 
@@ -4309,16 +4302,12 @@ statistics profile with the current settings.  Future Runstats calls
 with the 'UseProfile' option will re-use the combination of existing
 and current current statistics settings.
 
-This option is only available with DB2 V8.2 and later.
-
 =item UpdateProfileOnly
 
 This boolean option is used to update the statistics profile without
 actually collecting data.  Future Runstats calls with the
 'UseProfile' option will re-use the combination of existing and
 current current statistics settings.
-
-This option is only available with DB2 V8.2 and later.
 
 =item ExcludingXML
 
@@ -4334,15 +4323,11 @@ values for the table.  In the full Runstats API, this can be
 overridden on a per-column basis, but this implementation does not
 support that.
 
-This option is only available with DB2 V8.2 and later.
-
 =item DefaultQuantiles
 
 This numerical option is used to set the default number of quantiles
 for the table.  In the full Runstats API, this can be overridden on a
 per-column basis, but this implementation does not support that.
-
-This option is only available with DB2 V8.2 and later.
 
 =item ImpactPriority
 
@@ -4350,8 +4335,6 @@ This numerical option is used to set the impact of runstats.  The
 priority is between 0 and 100, with 0 being unthrottled and a number
 between 1 and 100 indicating a low priority (1) to high priority
 (100).  The default when this option is omitted is 0 (unthrottled).
-
-This option is only available with DB2 V8.2 and later.
 
 =back
 
@@ -4433,8 +4416,6 @@ Either of these selects both types of events
 
 =item ArchiveLog
 
-The C<ArchiveLog> action is only available with DB2 V8.1 and higher.
-
 =back
 
 =item ObjectName
@@ -4487,8 +4468,7 @@ The rebind semantics: "Any" or "Conservative"
 
 =item ReOpt
 
-The re-optimization semantics: "None", "Once" or "Always".  This
-option requires DB2 V8.2 or later.
+The re-optimization semantics: "None", "Once" or "Always".
 
 =back
 
@@ -4500,14 +4480,16 @@ re-optimization.
 =head2 ListUtilities
 
 This method lists the currently active utilities for the instance or
-the specified database.  It is implemented using an instance snapshot
-and required DB2 V8.2.  If attaching to the database instance requires
-a userid and password, an attachment must be established before
-calling this method.
+the specified database.  It is implemented using an instance snapshot.
+If attaching to the database instance requires a userid and password,
+an attachment must be established before calling this method.
 
-This method has one optional named parameters, C<Database>, which is
-used to select utilities for a specific database.  The return value is
-a list of hash-references with the following keys:
+This method has two optional named parameters, C<Database> and
+C<Version>.  The C<Database> option which is used to select utilities
+for a specific database; the C<Version> allows use of a different
+database release level.
+
+The return value is a list of hash-references with the following keys:
 
 =over 4
 

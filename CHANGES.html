@@ -9,7 +9,22 @@
 
 <UL>
 
+	<LI><A HREF="#Changes_in_the_3_1_release">Changes in the 3.1 release</A>
+	<UL>
+
+		<LI><A HREF="#Remove_support_for_DB2_releases_">Remove support for DB2 releases prior to V8.2</A>
+		<LI><A HREF="#Improve_support_for_Windows">Improve support for Windows</A>
+		<LI><A HREF="#Add_database_manager_configurati">Add database manager configuration parameters for V9.7</A>
+		<LI><A HREF="#Generate_constants_locally">Generate constants locally</A>
+		<LI><A HREF="#ListUtilities_fix">ListUtilities fix</A>
+	</UL>
+
 	<LI><A HREF="#Changes_in_the_3_0_release">Changes in the 3.0 release</A>
+	<UL>
+
+		<LI><A HREF="#Backup">Backup</A>
+	</UL>
+
 	<LI><A HREF="#Changes_in_the_2_9_release">Changes in the 2.9 release</A>
 	<UL>
 
@@ -236,9 +251,82 @@
 
 <HR>
 <P>
+<H1><A NAME="Changes_in_the_3_1_release">Changes in the 3.1 release
+
+</A></H1>
+<P>
+<HR>
+<H2><A NAME="Remove_support_for_DB2_releases_">Remove support for DB2 releases prior to V8.2
+
+</A></H2>
+Support for DB2 releases V7.2 and V8.1 has been dropped.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Improve_support_for_Windows">Improve support for Windows
+
+</A></H2>
+Mike O'Reilly gracefully and patiently pointed out a number of
+Unix-specific assumptions that have to be corrected to compile the module
+with ActiveState Perl 5.8.8 for 32-bit and 64-bit Windows.
+
+
+<P>
+
+Most of these affect device and filenames
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Add_database_manager_configurati">Add database manager configuration parameters for V9.7
+
+</A></H2>
+Add the new DB2 V9.7 configuration parameters, most of which are
+SSL-related.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Generate_constants_locally">Generate constants locally
+
+</A></H2>
+The <CODE>db2_constants.pl</CODE> file translates DB2 constants from symbolic names to numeric values.
+Previous releases generated the file when the package was created for
+distribution; the file will now be generated locally as part of the build
+process. This is necessary because IBM changes the value of some constants
+in an incompatible manner; so a file generated for V9.5 will not work with
+V8.2.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="ListUtilities_fix">ListUtilities fix
+
+</A></H2>
+The <CODE>ListUtilities</CODE> method now supports the <CODE>Version</CODE> parameter.
+
+
+<P>
+
+<P>
+<HR>
 <H1><A NAME="Changes_in_the_3_0_release">Changes in the 3.0 release
 
 </A></H1>
+<P>
+<HR>
+<H2><A NAME="Backup">Backup
+
+</A></H2>
 Add support for the Backup command, including support for DPF backups (with
 included logs) in DB2 V9.5.
 

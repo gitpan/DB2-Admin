@@ -1,4 +1,38 @@
+=head1 Changes in the 3.1 release
+
+=head2 Remove support for DB2 releases prior to V8.2
+
+Support for DB2 releases V7.2 and V8.1 has been dropped.
+
+=head2 Improve support for Windows
+
+Mike O'Reilly gracefully and patiently pointed out a number of
+Unix-specific assumptions that have to be corrected to compile the
+module with ActiveState Perl 5.8.8 for 32-bit and 64-bit Windows.
+
+Most of these affect device and filenames
+
+=head2 Add database manager configuration parameters for V9.7
+
+Add the new DB2 V9.7 configuration parameters, most of which are
+SSL-related.
+
+=head2 Generate constants locally
+
+The C<db2_constants.pl> file translates DB2 constants from symbolic
+names to numeric values.  Previous releases generated the file when
+the package was created for distribution; the file will now be
+generated locally as part of the build process.  This is necessary
+because IBM changes the value of some constants in an incompatible
+manner; so a file generated for V9.5 will not work with V8.2.
+
+=head2 ListUtilities fix
+
+The C<ListUtilities> method now supports the C<Version> parameter.
+
 =head1 Changes in the 3.0 release
+
+=head2 Backup
 
 Add support for the Backup command, including support for DPF backups
 (with included logs) in DB2 V9.5.

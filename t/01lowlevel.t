@@ -1,7 +1,7 @@
 #
 # Tests of the low-level raw API
 #
-# $Id: 01lowlevel.t,v 145.1 2007/10/17 14:44:20 biersma Exp $
+# $Id: 01lowlevel.t,v 165.2 2009/04/22 13:46:35 biersma Exp $
 #
 
 use strict;
@@ -10,6 +10,9 @@ use Test::More tests => 28;
 use Data::Dumper;
 BEGIN { use_ok('DB2::Admin'); }
 BEGIN { use_ok('DB2::Admin::Constants') };
+
+die "Environment variable DB2_VERSION not set" 
+  unless (defined $ENV{DB2_VERSION});
 
 #
 # Get the database name and whether to update the dbm cfg from the
@@ -48,7 +51,7 @@ ok($data, "sqleatin - inquire");
 DB2::Admin::db2MonitorSwitches({}, $version, $node) || 
   do {
       diag("Error with sqlcode ", DB2::Admin::sqlcode() .
-	   " and error message ", DB2::Admin::sqlaintp(), "\n");
+           " and error message ", DB2::Admin::sqlaintp(), "\n");
       fail("db2MonitorSwitches");
       exit(1);
   };
@@ -81,12 +84,12 @@ ok($rc, "db2GetSnapshotSize");
 # Get Snapshot
 #
 $data = DB2::Admin::db2GetSnapshot([ $list_apps ], $version, $node, $class_dft,
-			       16384, 16384, 0);
+                               16384, 16384, 0);
 if (defined $data) {
     pass("db2GetSnapshot");
 } else {
     diag ("Error with sqlcode ", DB2::Admin::sqlcode(),
-	  " and error message ", DB2::Admin::sqlaintp(), "\n");
+          " and error message ", DB2::Admin::sqlaintp(), "\n");
     fail("db2GetSnapshot");
 }
 
@@ -94,13 +97,11 @@ if (defined $data) {
 # Get database manager configuration
 #
 SKIP: {
-    my $version = substr($ENV{DB2_VERSION}, 1);	# Vx.y -> x.y
-    skip("db2CfgGet not available in DB2 version < 8", 2) if ($version < 8);
-
+    my $version = substr($ENV{DB2_VERSION}, 1); # Vx.y -> x.y
     my $retval = DB2::Admin::db2CfgGet( [ { Token => 311, Size => 255 } ],
-				    { Manager => 1, Immediate => 1 }, 
-				    '', 
-				    $version);
+                                    { Manager => 1, Immediate => 1 }, 
+                                    '', 
+                                    $version);
     ok($retval, "db2CfgGet");
 
     #
@@ -110,8 +111,8 @@ SKIP: {
 
     my $cur_value = $retval->[0]{Value};
     $rc = DB2::Admin::db2CfgSet( [ { Token => 311, Value => $cur_value } ],
-			     { Manager => 1, Delayed => 1 },
-			     '', $version);
+                             { Manager => 1, Delayed => 1 },
+                             '', $version);
     ok($rc, "db2CfgSet");
 }
 
@@ -159,10 +160,10 @@ ok($rc, "db2ClientInfo - get - $db_name");
 # Set client information
 #
 my $cinfo = { ClientUserid     => 'User Name',
-	      Workstation      => 'Desktop',
-	      Application      => 'Test Suite',
-	      AccountingString => 'Text used for accounting',
-	    };
+              Workstation      => 'Desktop',
+              Application      => 'Test Suite',
+              AccountingString => 'Text used for accounting',
+            };
 $rc = DB2::Admin::db2ClientInfo($db_name, $cinfo);
 ok($rc, "db2ClientInfo - set - $db_name");
 #print Dumper($rc);

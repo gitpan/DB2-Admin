@@ -39,7 +39,7 @@
 # THIS OR ANOTHER EQUIVALENT DISCLAIMER AS WELL AS ANY OTHER LICENSE
 # TERMS THAT MAY APPLY.
 #
-# $Id: typemap,v 145.2 2007/11/20 21:52:24 biersma Exp $
+# $Id: typemap,v 165.1 2008/12/29 18:20:01 biersma Exp $
 #
 
 struct sqlma* T_SQLMA
@@ -62,14 +62,14 @@ T_SQLMA
      */
     int           counter;
     int           obj_num;        /* # of objects to monitor */
-    unsigned int  ma_sz;          /* size of sqlma structure */
+    size_t        ma_sz;          /* size of sqlma structure */
     AV           *avref;
     char         *ptr;
 
     if (!SvROK($arg))
-	 croak(\"Reference expected for parameter $var\");
+         croak(\"Reference expected for parameter $var\");
     if (SvTYPE(SvRV($arg)) != SVt_PVAV)
-	 croak(\"Array reference expected for parameter $var\");
+         croak(\"Array reference expected for parameter $var\");
 
     avref = (AV*)SvRV($arg);
 
@@ -84,58 +84,58 @@ T_SQLMA
 
     /* Now traverse the array */
     for (counter = 0; counter < obj_num; counter++) {
-	SV **elem;
-	
-	elem = av_fetch(avref, counter, FALSE);
-	if ((!SvROK(*elem)) && looks_like_number(*elem)) {
-	    int val = SvIV(*elem);
-	    $var->obj_var[counter].obj_type = val;
-	} else if (SvROK(*elem) && SvTYPE(SvRV(*elem)) == SVt_PVHV) {
-	    char *key;
-	    I32   keylen;
-	    SV   *value;
-	    int   have_type = 0;
+        SV **elem;
+        
+        elem = av_fetch(avref, counter, FALSE);
+        if ((!SvROK(*elem)) && looks_like_number(*elem)) {
+            int val = SvIV(*elem);
+            $var->obj_var[counter].obj_type = val;
+        } else if (SvROK(*elem) && SvTYPE(SvRV(*elem)) == SVt_PVHV) {
+            char *key;
+            I32   keylen;
+            SV   *value;
+            int   have_type = 0;
 
-	    while ((value = hv_iternextsv((HV*)SvRV(*elem),
-					  (char **)&key, &keylen))) {
-		if (strEQ(key, \"Type\")) {
-		    have_type = 1;
-		    if ((!SvROK(value)) && looks_like_number(value)) {
-			int val = SvIV(value);
-			$var->obj_var[counter].obj_type = val;
-		    } else {
-			croak(\"Invalid data in $var elem %d, key %s: not an integer\", counter, key);
-		    }
-		} else if (strEQ(key, \"AgentId\")) {
-		    if ((!SvROK(value)) && looks_like_number(value)) {
-			int val = SvIV(value);
-			$var->obj_var[counter].agent_id = val;
-		    } else {
-			croak(\"Invalid data in $var elem %d, key %s: not an integer\", counter, key);
-		    }
-		} else if (strEQ(key, \"Object\")) {
-		    if ((!SvROK(value)) && SvPOK(value)) {
-			char  *val;
-			STRLEN len;
-			
-			val = SvPV(value, len);
-			if (len > SQLM_OBJECT_SZ) {
-			    croak(\"Length of $var elem %d, key %s too long: is %d bytes, max %d bytes\", counter, key, len, SQLM_OBJECT_SZ);
-			}
-			memcpy($var->obj_var[counter].object, val, len);
-		    } else {
-			croak(\"Invalid data in $var elem %d, key %s: not a string\", counter, key);
-		    }
-		} else {
-		    croak(\"Invalid data in $var elem %d: Invalid key %s\", counter, key);
-		}
-	    } /* End while: hash iteration */
-	    if (have_type == 0) {
-		croak(\"Invalid data in $var elem %d: required key 'Type' missing\", counter);
-	    }
-	} else {
-	    croak(\"Invalid data in $var elem %d: not an integer or HASH reference\", counter);
-	}
+            while ((value = hv_iternextsv((HV*)SvRV(*elem),
+                                          (char **)&key, &keylen))) {
+                if (strEQ(key, \"Type\")) {
+                    have_type = 1;
+                    if ((!SvROK(value)) && looks_like_number(value)) {
+                        int val = SvIV(value);
+                        $var->obj_var[counter].obj_type = val;
+                    } else {
+                        croak(\"Invalid data in $var elem %d, key %s: not an integer\", counter, key);
+                    }
+                } else if (strEQ(key, \"AgentId\")) {
+                    if ((!SvROK(value)) && looks_like_number(value)) {
+                        int val = SvIV(value);
+                        $var->obj_var[counter].agent_id = val;
+                    } else {
+                        croak(\"Invalid data in $var elem %d, key %s: not an integer\", counter, key);
+                    }
+                } else if (strEQ(key, \"Object\")) {
+                    if ((!SvROK(value)) && SvPOK(value)) {
+                        char  *val;
+                        STRLEN len;
+                        
+                        val = SvPV(value, len);
+                        if (len > SQLM_OBJECT_SZ) {
+                            croak(\"Length of $var elem %d, key %s too long: is %d bytes, max %d bytes\", counter, key, len, SQLM_OBJECT_SZ);
+                        }
+                        memcpy($var->obj_var[counter].object, val, len);
+                    } else {
+                        croak(\"Invalid data in $var elem %d, key %s: not a string\", counter, key);
+                    }
+                } else {
+                    croak(\"Invalid data in $var elem %d: Invalid key %s\", counter, key);
+                }
+            } /* End while: hash iteration */
+            if (have_type == 0) {
+                croak(\"Invalid data in $var elem %d: required key 'Type' missing\", counter);
+            }
+        } else {
+            croak(\"Invalid data in $var elem %d: not an integer or HASH reference\", counter);
+        }
     } /* End foreach: array element */
   } /* End T_SQLMA */
 #------------------------------------------------------------------------

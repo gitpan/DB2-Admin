@@ -1,7 +1,7 @@
 #
 # Test the connect / disconnect functions
 #
-# $Id: 11connect.t,v 150.1 2007/12/12 19:30:17 biersma Exp $
+# $Id: 11connect.t,v 165.1 2008/11/11 18:55:59 biersma Exp $
 #
 
 use strict;
@@ -28,14 +28,14 @@ ok($retval, "Disconnect - $db_name");
 my %attr = DB2::Admin::->SetConnectAttributes('ProgramName' => 'test_set_attr');
 ok(keys %attr, "SetConnectAttributes");
 
-my $retval = DB2::Admin->Connect('Database' => $db_name);
+$retval = DB2::Admin->Connect('Database' => $db_name);
 ok($retval, "Connect - $db_name (after setting attributes)");
 
 $retval = DB2::Admin->Disconnect('Database' => $db_name);
 ok($retval, "Disconnect - $db_name");
 
-my $retval = DB2::Admin->Connect('Database' => $db_name,
-			     'ConnectAttr' => { 'ProgramName' => 'test_pass_attr', });
+$retval = DB2::Admin->Connect('Database' => $db_name,
+			      'ConnectAttr' => { 'ProgramName' => 'test_pass_attr', });
 ok($retval, "Connect - $db_name (passing attributes)");
 
 $retval = DB2::Admin->Disconnect('Database' => $db_name);

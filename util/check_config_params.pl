@@ -3,11 +3,10 @@
 # check_config_params - Cross-verify configuration parameters
 #                       and known DB2 constants.
 #
-# $Id: check_config_params.pl,v 150.1 2007/12/12 19:23:49 biersma Exp $
+# $Id: check_config_params.pl,v 165.1 2009/04/22 14:07:15 biersma Exp $
 #
 
 use strict;
-use MSDW::Version ('Params-Validate' => '0.62');
 use DB2::Admin::Constants;
 
 my $config_params = $DB2::Admin::Constants::config_params;
@@ -259,8 +258,6 @@ foreach my $constant (sort keys %$DB2::Admin::Constants::constant_info) {
 
 #
 # Constants known to be obsolete should not be listed
-#
-# FIXME: include V8.2?  Maybe need -version parameter
 #
 foreach my $constant (@obsolete_v71, @obsolete_v81, 
 		      @obsolete_v82, @obsolete_v95) {
